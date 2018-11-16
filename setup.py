@@ -11,7 +11,12 @@ with open('README.md') as readme_file:
 with open('CHANGELOG.md') as history_file:
     history = history_file.read()
 
-requirements = [ ]
+requirements = [
+    "numpy",
+    "astra-toolbox",
+    "tqdm",  
+    "scipy",
+    "flexdata"]
 
 setup_requirements = [ ]
 
