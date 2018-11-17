@@ -6,7 +6,7 @@ The main purpose of this project is to provide an easy way to use cone-beam forw
 
 ## Getting Started
 
-Before installing flexTOMO, please download and install [flexDATA](https://github.com/cicwi/flexdata). Once installation of flexDATA is complete, 
+Before installing flexTOMO, please download and install [flexDATA](https://github.com/cicwi/flexdata). Once installation of flexDATA is complete, one can install flexTOMO from the source code or using [Anaconda](https://www.anaconda.com/download/).
 
 ### Installing with conda
 
