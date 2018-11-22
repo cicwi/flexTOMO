@@ -1,0 +1,1146 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>flextomo.project &mdash; flextomo  documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+
+  
+  <script src="../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> flextomo
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../readme.html">flextomo</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../modules.html">flextomo</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html">Changelog</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">flextomo</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+        
+      <li>flextomo.project</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for flextomo.project</h1><div class="highlight"><pre>
+<span></span><span class="ch">#!/usr/bin/env python3</span>
+<span class="c1"># -*- coding: utf-8 -*-</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Created on Oct 2018</span>
+<span class="sd">@author: kostenko</span>
+
+<span class="sd">This module some wrappers around ASTRA to make lives of people slightly less horrible.</span>
+<span class="sd">A lone traveller seeking for some algorithms can find bits and pieces of SIRT, FISTA and more.</span>
+<span class="sd">We will do our best to be memmap compatible and make sure that large data will not make your PC sink into dispair.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="c1"># &gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt; Imports &gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span>                <span class="c1"># arithmetics, arrays</span>
+<span class="kn">import</span> <span class="nn">sys</span>                  <span class="c1"># error info</span>
+<span class="kn">import</span> <span class="nn">traceback</span>            <span class="c1"># errors errors</span>
+<span class="kn">import</span> <span class="nn">random</span>               <span class="c1"># random generator for blocking</span>
+<span class="kn">import</span> <span class="nn">scipy</span>                <span class="c1"># minimizaer used in Students-T</span>
+<span class="kn">from</span> <span class="nn">tqdm</span> <span class="k">import</span> <span class="n">tqdm</span>       <span class="c1"># progress bar</span>
+<span class="kn">from</span> <span class="nn">time</span> <span class="k">import</span> <span class="n">sleep</span>      <span class="c1"># pause to allow time for the progress bar to print</span>
+
+<span class="kn">import</span> <span class="nn">astra</span>                       <span class="c1"># The mother of tomography</span>
+<span class="kn">import</span> <span class="nn">astra.experimental</span> <span class="k">as</span> <span class="nn">asex</span>  <span class="c1"># The ugly offspring </span>
+
+<span class="kn">from</span> <span class="nn">flexdata</span> <span class="k">import</span> <span class="n">io</span>     <span class="c1"># geometry to astra conversions</span>
+<span class="kn">from</span> <span class="nn">flexdata</span> <span class="k">import</span> <span class="n">array</span>  
+<span class="kn">from</span> <span class="nn">flexdata</span> <span class="k">import</span> <span class="n">display</span><span class="c1"># show images</span>
+
+<span class="c1"># &gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt; Global vars &gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;</span>
+          
+<span class="c1"># Here I will put some settings:</span>
+
+<span class="n">settings</span> <span class="o">=</span> <span class="p">{</span>
+<span class="s1">&#39;progress_bar&#39;</span> <span class="p">:</span> <span class="kc">True</span><span class="p">,</span>      <span class="c1"># Show progress bar. Now works only in FDK, backproject and forwardproject</span>
+<span class="s1">&#39;block_number&#39;</span> <span class="p">:</span> <span class="mi">1</span><span class="p">,</span>        <span class="c1"># subsets or blocks into which the projections are divided</span>
+<span class="s1">&#39;mode&#39;</span> <span class="p">:</span> <span class="s1">&#39;sequential&#39;</span><span class="p">,</span>      <span class="c1"># This field can be &#39;random&#39;, &#39;sequential&#39; or &#39;equidistant&#39;</span>
+<span class="s1">&#39;poisson_weight&#39;</span> <span class="p">:</span> <span class="kc">False</span><span class="p">,</span>   <span class="c1"># use weights of projection pixels according to a Poisson statistics</span>
+
+<span class="s1">&#39;bounds&#39;</span> <span class="p">:</span> <span class="kc">None</span><span class="p">,</span>            <span class="c1"># bound reconstruction values</span>
+<span class="s1">&#39;preview&#39;</span> <span class="p">:</span> <span class="kc">False</span><span class="p">,</span>          <span class="c1"># show previews</span>
+
+<span class="s1">&#39;norm_update&#39;</span> <span class="p">:</span> <span class="kc">False</span><span class="p">,</span>      <span class="c1"># update norm during iterations?</span>
+<span class="s1">&#39;norm&#39;</span> <span class="p">:</span> <span class="p">[]}</span>                 <span class="c1"># stored norm</span>
+
+<span class="c1"># &gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt; Methods &gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;</span>
+
+<div class="viewcode-block" id="init_volume"><a class="viewcode-back" href="../../flextomo.html#flextomo.project.init_volume">[docs]</a><span class="k">def</span> <span class="nf">init_volume</span><span class="p">(</span><span class="n">projections</span><span class="p">,</span> <span class="n">geometry</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Initialize a standard volume array.</span>
+<span class="sd">    &quot;&quot;&quot;</span>          
+    <span class="c1"># Use geometry to compute additional offset if needed:</span>
+    
+    <span class="k">if</span> <span class="n">geometry</span><span class="p">:</span>
+        <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        sample = geometry[&#39;proj_sample&#39;]</span>
+
+<span class="sd">        offset = int(abs(geometry[&#39;vol_tra&#39;][2]) / geometry[&#39;img_pixel&#39;] / sample[2])</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">shape</span> <span class="o">=</span> <span class="n">array</span><span class="o">.</span><span class="n">volume_shape</span><span class="p">(</span><span class="n">projections</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">geometry</span><span class="p">)</span>
+        
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">offset</span> <span class="o">=</span> <span class="mi">0</span>
+        
+        <span class="n">sample</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
+
+        <span class="n">shape</span> <span class="o">=</span> <span class="n">projections</span><span class="p">[::</span><span class="n">sample</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="p">::</span><span class="n">sample</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="p">::</span><span class="n">sample</span><span class="p">[</span><span class="mi">2</span><span class="p">]]</span><span class="o">.</span><span class="n">shape</span>
+        <span class="n">shape</span> <span class="o">=</span> <span class="p">[</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">+</span><span class="n">offset</span><span class="p">,</span> <span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">+</span><span class="n">offset</span><span class="p">]</span>
+    
+    <span class="k">return</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">shape</span><span class="p">,</span> <span class="n">dtype</span> <span class="o">=</span> <span class="s1">&#39;float32&#39;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="FDK"><a class="viewcode-back" href="../../flextomo.html#flextomo.project.FDK">[docs]</a><span class="k">def</span> <span class="nf">FDK</span><span class="p">(</span> <span class="n">projections</span><span class="p">,</span> <span class="n">volume</span><span class="p">,</span> <span class="n">geometry</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Feldkamp, Davis and Kress cone beam reconstruction.</span>
+<span class="sd">    Args:</span>
+<span class="sd">        projections : input numpy.array (dtype = float32) with the following dimensions: [vrt, rot, hrz]</span>
+<span class="sd">        volume      : output numpy.array (dtype = float32) with the following dimensions: [vrt, mag, hrz]</span>
+<span class="sd">        geometry    : geometry description - one of threee types: &#39;simple&#39;, &#39;static_offsets&#39;, &#39;linear_offsets&#39;</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">backproject</span><span class="p">(</span><span class="n">projections</span><span class="p">,</span> <span class="n">volume</span><span class="p">,</span> <span class="n">geometry</span><span class="p">,</span> <span class="s1">&#39;FDK_CUDA&#39;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="backproject"><a class="viewcode-back" href="../../flextomo.html#flextomo.project.backproject">[docs]</a><span class="k">def</span> <span class="nf">backproject</span><span class="p">(</span> <span class="n">projections</span><span class="p">,</span> <span class="n">volume</span><span class="p">,</span> <span class="n">geometry</span><span class="p">,</span> <span class="n">algorithm</span> <span class="o">=</span> <span class="s1">&#39;BP3D_CUDA&#39;</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Backproject using standard ASTRA functionality. If data array is memmap, backprojection is done in blocks to save RAM.</span>
+<span class="sd">    Args:</span>
+<span class="sd">        projections : input numpy.array (dtype = float32) with the following dimensions: [vrt, rot, hrz]</span>
+<span class="sd">        volume      : output numpy.array (dtype = float32) with the following dimensions: [vrt, mag, hrz]</span>
+<span class="sd">        geometry    : geometry description - one of threee types: &#39;simple&#39;, &#39;static_offsets&#39;, &#39;linear_offsets&#39;</span>
+<span class="sd">        algorithm   : ASTRA algorithm type [&#39;BP3D_CUDA&#39;, &#39;FDK_CUDA&#39; etc.]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">global</span> <span class="n">settings</span>
+    <span class="n">block_number</span> <span class="o">=</span> <span class="n">settings</span><span class="p">[</span><span class="s1">&#39;block_number&#39;</span><span class="p">]</span>
+    <span class="n">mode</span> <span class="o">=</span> <span class="n">settings</span><span class="p">[</span><span class="s1">&#39;mode&#39;</span><span class="p">]</span>
+        
+    <span class="c1"># Check if projections should be subsampled:</span>
+    <span class="n">sam</span> <span class="o">=</span> <span class="n">geometry</span><span class="p">[</span><span class="s1">&#39;proj_sample&#39;</span><span class="p">]</span>
+    <span class="k">if</span> <span class="nb">sum</span><span class="p">(</span><span class="n">sam</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">3</span><span class="p">:</span>
+        <span class="n">projections</span> <span class="o">=</span> <span class="n">projections</span><span class="p">[::</span><span class="n">sam</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="p">::</span><span class="n">sam</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="p">::</span><span class="n">sam</span><span class="p">[</span><span class="mi">2</span><span class="p">]]</span>
+        
+    <span class="c1"># Weight correction    </span>
+    <span class="n">prj_weight</span> <span class="o">=</span> <span class="n">_astra_norm_</span><span class="p">(</span><span class="n">projections</span><span class="p">,</span> <span class="n">volume</span><span class="p">,</span> <span class="n">geometry</span><span class="p">,</span> <span class="n">algorithm</span><span class="p">)</span>
+    
+    <span class="c1"># If algorithm is FDK we use single-block projection unless data is a memmap</span>
+    <span class="k">if</span> <span class="n">block_number</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        
+        <span class="n">projections</span> <span class="o">=</span> <span class="n">_contiguous_check_</span><span class="p">(</span><span class="n">projections</span><span class="p">)</span> 
+        
+        <span class="c1"># Initialize ASTRA geometries:</span>
+        <span class="n">vol_geom</span> <span class="o">=</span> <span class="n">io</span><span class="o">.</span><span class="n">astra_vol_geom</span><span class="p">(</span><span class="n">geometry</span><span class="p">,</span> <span class="n">volume</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+        <span class="n">proj_geom</span> <span class="o">=</span> <span class="n">io</span><span class="o">.</span><span class="n">astra_proj_geom</span><span class="p">(</span><span class="n">geometry</span><span class="p">,</span> <span class="n">projections</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>    
+        
+        <span class="c1"># Progress bar:</span>
+        <span class="n">pbar</span> <span class="o">=</span> <span class="n">_pbar_start_</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="n">projections</span> <span class="o">*=</span> <span class="n">prj_weight</span>
+        
+        <span class="c1"># ASTRA here...</span>
+        <span class="n">_backproject_block_add_</span><span class="p">(</span><span class="n">projections</span><span class="p">,</span> <span class="n">volume</span><span class="p">,</span> <span class="n">proj_geom</span><span class="p">,</span> <span class="n">vol_geom</span><span class="p">,</span> <span class="n">algorithm</span><span class="p">)</span>
+
+        <span class="n">projections</span> <span class="o">/=</span> <span class="n">prj_weight</span>
+        
+        <span class="n">_pbar_update_</span><span class="p">(</span><span class="n">pbar</span><span class="p">)</span>
+        <span class="n">_pbar_close_</span><span class="p">(</span><span class="n">pbar</span><span class="p">)</span>
+        
+    <span class="k">else</span><span class="p">:</span>   
+        <span class="c1"># Here is the multi-block version:</span>
+        
+        <span class="c1"># Initialize ASTRA volume geometry:</span>
+        <span class="n">vol_geom</span> <span class="o">=</span> <span class="n">io</span><span class="o">.</span><span class="n">astra_vol_geom</span><span class="p">(</span><span class="n">geometry</span><span class="p">,</span> <span class="n">volume</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+        
+        <span class="c1"># Progress bar:</span>
+        <span class="n">pbar</span> <span class="o">=</span> <span class="n">_pbar_start_</span><span class="p">(</span><span class="n">block_number</span><span class="p">,</span> <span class="s1">&#39;block&#39;</span><span class="p">)</span>
+        
+        <span class="c1"># Loop over blocks:</span>
+        <span class="k">for</span> <span class="n">ii</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">block_number</span><span class="p">):</span>
+            
+            <span class="c1"># Extract a block:</span>
+            <span class="n">index</span> <span class="o">=</span> <span class="n">_block_index_</span><span class="p">(</span><span class="n">ii</span><span class="p">,</span> <span class="n">block_number</span><span class="p">,</span> <span class="n">projections</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">mode</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">index</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span> 
+                
+                <span class="n">proj_geom</span> <span class="o">=</span> <span class="n">io</span><span class="o">.</span><span class="n">astra_proj_geom</span><span class="p">(</span><span class="n">geometry</span><span class="p">,</span> <span class="n">projections</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">index</span><span class="p">)</span>  
+                
+                <span class="c1"># number of projections in a block can vary a bit and FDK is not aware of that...</span>
+                <span class="n">block</span> <span class="o">=</span> <span class="n">projections</span><span class="p">[:,</span> <span class="n">index</span><span class="p">,:]</span> <span class="o">*</span> <span class="n">prj_weight</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">index</span><span class="p">)</span>
+                
+                <span class="c1"># BP and FDK behave differently in terms of normalization:</span>
+                <span class="k">if</span> <span class="p">(</span><span class="n">algorithm</span> <span class="o">==</span> <span class="s1">&#39;BP3D_CUDA&#39;</span><span class="p">):</span>
+                    <span class="n">block</span> <span class="o">*=</span> <span class="n">block_number</span>
+                    
+                <span class="n">block</span> <span class="o">=</span> <span class="n">_contiguous_check_</span><span class="p">(</span><span class="n">block</span><span class="p">)</span>
+    
+                <span class="c1"># Backproject:    </span>
+                <span class="n">_backproject_block_add_</span><span class="p">(</span><span class="n">block</span><span class="p">,</span> <span class="n">volume</span><span class="p">,</span> <span class="n">proj_geom</span><span class="p">,</span> <span class="n">vol_geom</span><span class="p">,</span> <span class="n">algorithm</span><span class="p">)</span>  
+            
+            <span class="n">_pbar_update_</span><span class="p">(</span><span class="n">pbar</span><span class="p">)</span>
+            
+        <span class="n">_pbar_close_</span><span class="p">(</span><span class="n">pbar</span><span class="p">)</span>
+        
+        <span class="c1"># ASTRA is not aware of the number of blocks:    </span>
+        <span class="n">volume</span> <span class="o">/=</span> <span class="n">projections</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span></div>
+                       
+<div class="viewcode-block" id="forwardproject"><a class="viewcode-back" href="../../flextomo.html#flextomo.project.forwardproject">[docs]</a><span class="k">def</span> <span class="nf">forwardproject</span><span class="p">(</span> <span class="n">projections</span><span class="p">,</span> <span class="n">volume</span><span class="p">,</span> <span class="n">geometry</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Forwardproject using standard ASTRA functionality. If data array is memmap, projection is done in blocks to save RAM.</span>
+<span class="sd">    Args:</span>
+<span class="sd">        projections : output numpy.array (dtype = float32) with the following dimensions: [vrt, rot, hrz]</span>
+<span class="sd">        volume      : input numpy.array (dtype = float32) with the following dimensions: [vrt, mag, hrz]</span>
+<span class="sd">        geometry    : geometry description - one of threee types: &#39;simple&#39;, &#39;static_offsets&#39;, &#39;linear_offsets&#39;</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">global</span> <span class="n">settings</span>
+    <span class="n">block_number</span> <span class="o">=</span> <span class="n">settings</span><span class="p">[</span><span class="s1">&#39;block_number&#39;</span><span class="p">]</span>
+    <span class="n">mode</span> <span class="o">=</span> <span class="n">settings</span><span class="p">[</span><span class="s1">&#39;mode&#39;</span><span class="p">]</span>
+    
+    <span class="c1"># Check if projections should be subsampled:</span>
+    <span class="n">sam</span> <span class="o">=</span> <span class="n">geometry</span><span class="p">[</span><span class="s1">&#39;vol_sample&#39;</span><span class="p">]</span>
+    <span class="k">if</span> <span class="nb">sum</span><span class="p">(</span><span class="n">sam</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">3</span><span class="p">:</span>
+        <span class="n">volume</span> <span class="o">=</span> <span class="n">volume</span><span class="p">[</span><span class="n">sam</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">sam</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">sam</span><span class="p">[</span><span class="mi">2</span><span class="p">]]</span>
+    
+    <span class="c1"># Non-memmap case is a single block:</span>
+    <span class="n">volume</span> <span class="o">=</span> <span class="n">_contiguous_check_</span><span class="p">(</span><span class="n">volume</span><span class="p">)</span> 
+        
+    <span class="c1"># Forward project will always use blocks:     </span>
+    <span class="k">if</span> <span class="n">block_number</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        
+        <span class="c1"># Initialize ASTRA geometries:</span>
+        <span class="n">vol_geom</span> <span class="o">=</span> <span class="n">io</span><span class="o">.</span><span class="n">astra_vol_geom</span><span class="p">(</span><span class="n">geometry</span><span class="p">,</span> <span class="n">volume</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+        <span class="n">proj_geom</span> <span class="o">=</span> <span class="n">io</span><span class="o">.</span><span class="n">astra_proj_geom</span><span class="p">(</span><span class="n">geometry</span><span class="p">,</span> <span class="n">projections</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>    
+        
+        <span class="c1"># Progress bar:</span>
+        <span class="n">pbar</span> <span class="o">=</span> <span class="n">_pbar_start_</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+        
+        <span class="n">_forwardproject_block_add_</span><span class="p">(</span><span class="n">projections</span><span class="p">,</span> <span class="n">volume</span><span class="p">,</span> <span class="n">proj_geom</span><span class="p">,</span> <span class="n">vol_geom</span><span class="p">)</span>
+        
+        <span class="n">_pbar_update_</span><span class="p">(</span><span class="n">pbar</span><span class="p">)</span>
+        <span class="n">_pbar_close_</span><span class="p">(</span><span class="n">pbar</span><span class="p">)</span>
+        
+    <span class="k">else</span><span class="p">:</span>   
+        <span class="c1"># Multi-block:</span>
+        
+        <span class="c1"># Initialize ASTRA geometries:</span>
+        <span class="n">vol_geom</span> <span class="o">=</span> <span class="n">io</span><span class="o">.</span><span class="n">astra_vol_geom</span><span class="p">(</span><span class="n">geometry</span><span class="p">,</span> <span class="n">volume</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+        
+        <span class="c1"># Progress bar:</span>
+        <span class="n">pbar</span> <span class="o">=</span> <span class="n">_pbar_start_</span><span class="p">(</span><span class="n">unit</span> <span class="o">=</span> <span class="s1">&#39;block&#39;</span><span class="p">,</span> <span class="n">total</span><span class="o">=</span><span class="n">block_number</span><span class="p">)</span>
+        
+        <span class="c1"># Loop over blocks:</span>
+        <span class="k">for</span> <span class="n">ii</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">block_number</span><span class="p">):</span>
+            
+            <span class="n">index</span> <span class="o">=</span> <span class="n">_block_index_</span><span class="p">(</span><span class="n">ii</span><span class="p">,</span> <span class="n">block_number</span><span class="p">,</span> <span class="n">projections</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">mode</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">index</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span> 
+        
+                <span class="c1"># Extract a block:</span>
+                <span class="n">proj_geom</span> <span class="o">=</span> <span class="n">io</span><span class="o">.</span><span class="n">astra_proj_geom</span><span class="p">(</span><span class="n">geometry</span><span class="p">,</span> <span class="n">projections</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">index</span><span class="p">)</span>    
+                <span class="n">block</span> <span class="o">=</span> <span class="n">projections</span><span class="p">[:,</span> <span class="n">index</span><span class="p">,:]</span>
+                <span class="n">block</span> <span class="o">=</span> <span class="n">_contiguous_check_</span><span class="p">(</span><span class="n">block</span><span class="p">)</span>
+                
+                <span class="c1"># Backproject:    </span>
+                <span class="n">_forwardproject_block_add_</span><span class="p">(</span><span class="n">block</span><span class="p">,</span> <span class="n">volume</span><span class="p">,</span> <span class="n">proj_geom</span><span class="p">,</span> <span class="n">vol_geom</span><span class="p">)</span>  
+                
+                <span class="n">projections</span><span class="p">[:,</span> <span class="n">index</span><span class="p">,:]</span> <span class="o">=</span> <span class="n">block</span>
+                
+                <span class="n">_pbar_update_</span><span class="p">(</span><span class="n">pbar</span><span class="p">)</span>
+            
+        <span class="n">_pbar_close_</span><span class="p">(</span><span class="n">pbar</span><span class="p">)</span></div>
+   
+<div class="viewcode-block" id="SIRT"><a class="viewcode-back" href="../../flextomo.html#flextomo.project.SIRT">[docs]</a><span class="k">def</span> <span class="nf">SIRT</span><span class="p">(</span> <span class="n">projections</span><span class="p">,</span> <span class="n">volume</span><span class="p">,</span> <span class="n">geometry</span><span class="p">,</span> <span class="n">iterations</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Simultaneous Iterative Reconstruction Technique.</span>
+<span class="sd">    &quot;&quot;&quot;</span>     
+    <span class="k">global</span> <span class="n">settings</span>
+    <span class="n">preview</span> <span class="o">=</span> <span class="n">settings</span><span class="p">[</span><span class="s1">&#39;preview&#39;</span><span class="p">]</span>
+    <span class="n">norm_update</span> <span class="o">=</span> <span class="n">settings</span><span class="p">[</span><span class="s1">&#39;norm_update&#39;</span><span class="p">]</span>
+    
+    <span class="c1"># Sampling:</span>
+    <span class="n">samp</span> <span class="o">=</span> <span class="n">geometry</span><span class="p">[</span><span class="s1">&#39;proj_sample&#39;</span><span class="p">]</span>
+    
+    <span class="n">shp</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">projections</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+    <span class="n">shp</span> <span class="o">//=</span> <span class="n">samp</span>
+               
+    <span class="c1"># Initialize L2:</span>
+    <span class="n">settings</span><span class="p">[</span><span class="s1">&#39;norm&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>   
+
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Feeling SIRTy...&#39;</span><span class="p">)</span>
+    <span class="n">sleep</span><span class="p">(</span><span class="mf">0.5</span><span class="p">)</span>
+    
+    <span class="c1"># Switch off progress bar if preview is on...</span>
+    <span class="k">if</span> <span class="n">preview</span><span class="p">:</span> 
+        <span class="n">ncols</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">ncols</span> <span class="o">=</span> <span class="mi">50</span>
+        
+    <span class="c1"># Iterate:    </span>
+    <span class="k">for</span> <span class="n">ii</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">iterations</span><span class="p">),</span><span class="n">ncols</span><span class="o">=</span><span class="n">ncols</span><span class="p">):</span>
+    
+        <span class="c1"># Update volume:</span>
+        <span class="k">if</span> <span class="nb">sum</span><span class="p">(</span><span class="n">samp</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">3</span><span class="p">:</span>
+            
+            <span class="n">L2_step</span><span class="p">(</span><span class="n">projections</span><span class="p">[::</span><span class="n">samp</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="p">::</span><span class="n">samp</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="p">::</span><span class="n">samp</span><span class="p">[</span><span class="mi">2</span><span class="p">]],</span> <span class="n">volume</span><span class="p">,</span> <span class="n">geometry</span><span class="p">)</span>
+            
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">L2_step</span><span class="p">(</span><span class="n">projections</span><span class="p">,</span> <span class="n">volume</span><span class="p">,</span> <span class="n">geometry</span><span class="p">)</span>
+            
+        <span class="c1"># Preview</span>
+        <span class="k">if</span> <span class="n">preview</span><span class="p">:</span>
+            <span class="n">display</span><span class="o">.</span><span class="n">display_slice</span><span class="p">(</span><span class="n">volume</span><span class="p">,</span> <span class="n">dim</span> <span class="o">=</span> <span class="mi">1</span><span class="p">)</span>
+            
+    <span class="k">if</span> <span class="n">norm_update</span><span class="p">:</span>   
+         <span class="n">display</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">settings</span><span class="p">[</span><span class="s1">&#39;norm&#39;</span><span class="p">],</span> <span class="n">semilogy</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="n">title</span> <span class="o">=</span> <span class="s1">&#39;Resudual L2&#39;</span><span class="p">)</span>   </div>
+   
+<div class="viewcode-block" id="EM"><a class="viewcode-back" href="../../flextomo.html#flextomo.project.EM">[docs]</a><span class="k">def</span> <span class="nf">EM</span><span class="p">(</span> <span class="n">projections</span><span class="p">,</span> <span class="n">volume</span><span class="p">,</span> <span class="n">geometry</span><span class="p">,</span> <span class="n">iterations</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Expectation Maximization</span>
+<span class="sd">    &quot;&quot;&quot;</span> 
+    <span class="k">global</span> <span class="n">settings</span>
+    <span class="n">preview</span> <span class="o">=</span> <span class="n">settings</span><span class="p">[</span><span class="s1">&#39;preview&#39;</span><span class="p">]</span>
+    <span class="n">norm_update</span> <span class="o">=</span> <span class="n">settings</span><span class="p">[</span><span class="s1">&#39;norm_update&#39;</span><span class="p">]</span>
+    
+    <span class="c1"># Make sure that the volume is positive:</span>
+    <span class="k">if</span> <span class="n">volume</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span> 
+        <span class="n">volume</span> <span class="o">*=</span> <span class="mi">0</span>
+        <span class="n">volume</span> <span class="o">+=</span> <span class="mi">1</span>
+    <span class="k">elif</span> <span class="n">volume</span><span class="o">.</span><span class="n">min</span><span class="p">()</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span> <span class="n">volume</span><span class="p">[</span><span class="n">volume</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="n">projections</span><span class="p">[</span><span class="n">projections</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="c1"># Initialize L2:</span>
+    <span class="n">settings</span><span class="p">[</span><span class="s1">&#39;norm&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+            
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Em Emm Emmmm...&#39;</span><span class="p">)</span>
+    <span class="n">sleep</span><span class="p">(</span><span class="mf">0.5</span><span class="p">)</span>
+    
+    <span class="c1"># Switch off progress bar if preview is on...</span>
+    <span class="k">if</span> <span class="n">preview</span><span class="p">:</span> 
+        <span class="n">ncols</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">ncols</span> <span class="o">=</span> <span class="mi">50</span>
+        
+    <span class="c1"># Go!    </span>
+    <span class="k">for</span> <span class="n">ii</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">iterations</span><span class="p">),</span> <span class="n">ncols</span> <span class="o">=</span> <span class="n">ncols</span><span class="p">):</span>
+         
+        <span class="c1"># Update volume:</span>
+        <span class="n">EM_step</span><span class="p">(</span><span class="n">projections</span><span class="p">,</span> <span class="n">volume</span><span class="p">,</span> <span class="n">geometry</span><span class="p">)</span>
+                    
+        <span class="c1"># Preview</span>
+        <span class="k">if</span> <span class="n">preview</span><span class="p">:</span>
+            <span class="n">display</span><span class="o">.</span><span class="n">display_slice</span><span class="p">(</span><span class="n">volume</span><span class="p">,</span> <span class="n">dim</span> <span class="o">=</span> <span class="mi">1</span><span class="p">)</span>
+            
+    <span class="k">if</span> <span class="n">norm_update</span><span class="p">:</span>   
+         <span class="n">display</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">settings</span><span class="p">[</span><span class="s1">&#39;norm&#39;</span><span class="p">],</span> <span class="n">semilogy</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="n">title</span> <span class="o">=</span> <span class="s1">&#39;Resudual norm&#39;</span><span class="p">)</span>      </div>
+
+<div class="viewcode-block" id="FISTA"><a class="viewcode-back" href="../../flextomo.html#flextomo.project.FISTA">[docs]</a><span class="k">def</span> <span class="nf">FISTA</span><span class="p">(</span> <span class="n">projections</span><span class="p">,</span> <span class="n">volume</span><span class="p">,</span> <span class="n">geometry</span><span class="p">,</span> <span class="n">iterations</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    FISTA reconstruction. Right now there is no TV minimization substep here!</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">global</span> <span class="n">settings</span>
+    <span class="n">preview</span> <span class="o">=</span> <span class="n">settings</span><span class="p">[</span><span class="s1">&#39;preview&#39;</span><span class="p">]</span>
+    <span class="n">norm_update</span> <span class="o">=</span> <span class="n">settings</span><span class="p">[</span><span class="s1">&#39;norm_update&#39;</span><span class="p">]</span>
+    
+    <span class="c1"># Sampling:</span>
+    <span class="n">samp</span> <span class="o">=</span> <span class="n">geometry</span><span class="p">[</span><span class="s1">&#39;proj_sample&#39;</span><span class="p">]</span>
+    <span class="n">anisotropy</span> <span class="o">=</span> <span class="n">geometry</span><span class="p">[</span><span class="s1">&#39;vol_sample&#39;</span><span class="p">]</span>
+    
+    <span class="n">shp</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">projections</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+    <span class="n">shp</span> <span class="o">//=</span> <span class="n">samp</span>
+    
+    <span class="n">prj_weight</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">/</span> <span class="p">(</span><span class="n">shp</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">numpy</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="n">anisotropy</span><span class="p">)</span> <span class="o">*</span> <span class="nb">max</span><span class="p">(</span><span class="n">volume</span><span class="o">.</span><span class="n">shape</span><span class="p">))</span> 
+                    
+    <span class="c1"># Initialize L2:</span>
+    <span class="n">settings</span><span class="p">[</span><span class="s1">&#39;norm&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">t</span> <span class="o">=</span> <span class="mi">1</span>
+    
+    <span class="n">volume_t</span> <span class="o">=</span> <span class="n">volume</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="n">volume_old</span> <span class="o">=</span> <span class="n">volume</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;FISTING in progress...&#39;</span><span class="p">)</span>
+    <span class="n">sleep</span><span class="p">(</span><span class="mf">0.5</span><span class="p">)</span>
+        
+    <span class="c1"># Switch off progress bar if preview is on...</span>
+    <span class="k">if</span> <span class="n">preview</span><span class="p">:</span> 
+        <span class="n">ncols</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">ncols</span> <span class="o">=</span> <span class="mi">50</span>
+        
+    <span class="k">for</span> <span class="n">ii</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">iterations</span><span class="p">),</span> <span class="n">ncols</span> <span class="o">=</span> <span class="n">ncols</span><span class="p">):</span>
+    
+        <span class="c1"># Update volume:</span>
+        <span class="k">if</span> <span class="nb">sum</span><span class="p">(</span><span class="n">samp</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="n">proj</span> <span class="o">=</span> <span class="n">projections</span><span class="p">[::</span><span class="n">samp</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="p">::</span><span class="n">samp</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="p">::</span><span class="n">samp</span><span class="p">[</span><span class="mi">2</span><span class="p">]]</span>
+            <span class="n">FISTA_step</span><span class="p">(</span><span class="n">proj</span><span class="p">,</span> <span class="n">prj_weight</span><span class="p">,</span> <span class="n">volume</span><span class="p">,</span> <span class="n">volume_old</span><span class="p">,</span> <span class="n">volume_t</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">geometry</span><span class="p">)</span>
+        
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">FISTA_step</span><span class="p">(</span><span class="n">projections</span><span class="p">,</span> <span class="n">volume</span><span class="p">,</span> <span class="n">volume_old</span><span class="p">,</span> <span class="n">volume_t</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">geometry</span><span class="p">)</span>
+        
+        <span class="c1"># Preview</span>
+        <span class="k">if</span> <span class="n">preview</span><span class="p">:</span>
+            <span class="n">display</span><span class="o">.</span><span class="n">display_slice</span><span class="p">(</span><span class="n">volume</span><span class="p">,</span> <span class="n">dim</span> <span class="o">=</span> <span class="mi">1</span><span class="p">)</span>
+            
+    <span class="k">if</span> <span class="n">norm_update</span><span class="p">:</span>   
+         <span class="n">display</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">settings</span><span class="p">[</span><span class="s1">&#39;norm&#39;</span><span class="p">],</span> <span class="n">semilogy</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="n">title</span> <span class="o">=</span> <span class="s1">&#39;Resudual norm&#39;</span><span class="p">)</span>   </div>
+         
+<div class="viewcode-block" id="MULTI_SIRT"><a class="viewcode-back" href="../../flextomo.html#flextomo.project.MULTI_SIRT">[docs]</a><span class="k">def</span> <span class="nf">MULTI_SIRT</span><span class="p">(</span> <span class="n">projections</span><span class="p">,</span> <span class="n">volume</span><span class="p">,</span> <span class="n">geometries</span><span class="p">,</span> <span class="n">iterations</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A multi-dataset version of SIRT. Here prjections and geometries are lists.</span>
+<span class="sd">    &quot;&quot;&quot;</span> 
+    <span class="k">global</span> <span class="n">settings</span>
+    <span class="n">preview</span> <span class="o">=</span> <span class="n">settings</span><span class="p">[</span><span class="s1">&#39;preview&#39;</span><span class="p">]</span>
+    <span class="n">norm_update</span> <span class="o">=</span> <span class="n">settings</span><span class="p">[</span><span class="s1">&#39;norm_update&#39;</span><span class="p">]</span>
+    <span class="n">norm</span> <span class="o">=</span> <span class="n">settings</span><span class="p">[</span><span class="s1">&#39;norm&#39;</span><span class="p">]</span>
+    
+    <span class="c1"># Make sure array is contiguous (if not memmap):</span>
+    <span class="c1"># if not isinstance(projections, numpy.memmap):</span>
+    <span class="c1">#    projections = numpy.ascontiguousarray(projections)        </span>
+    
+    <span class="c1"># Initialize L2:</span>
+    <span class="n">norm</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Doing SIRT`y things...&#39;</span><span class="p">)</span>
+    <span class="n">sleep</span><span class="p">(</span><span class="mf">0.5</span><span class="p">)</span>
+
+    <span class="c1"># Switch off progress bar if preview is on...</span>
+    <span class="k">if</span> <span class="n">preview</span><span class="p">:</span> 
+        <span class="n">ncols</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">ncols</span> <span class="o">=</span> <span class="mi">50</span>
+        
+    <span class="k">for</span> <span class="n">ii</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">iterations</span><span class="p">),</span> <span class="n">ncols</span> <span class="o">=</span> <span class="n">ncols</span><span class="p">):</span>
+        
+        <span class="n">norm</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">ii</span><span class="p">,</span> <span class="n">proj</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">projections</span><span class="p">):</span>
+            
+            <span class="c1"># This weight is half of the normal weight to make sure convergence is ok:</span>
+            <span class="c1">#prj_weight = 1 / (proj.shape[1] * max(volume.shape)) </span>
+    
+            <span class="c1"># Update volume:</span>
+            <span class="n">L2_step</span><span class="p">(</span><span class="n">proj</span><span class="p">,</span> <span class="n">volume</span><span class="p">,</span> <span class="n">geometries</span><span class="p">[</span><span class="n">ii</span><span class="p">])</span>
+                                    
+        <span class="c1"># Preview</span>
+        <span class="k">if</span> <span class="n">preview</span><span class="p">:</span>
+            <span class="n">display</span><span class="o">.</span><span class="n">display_slice</span><span class="p">(</span><span class="n">volume</span><span class="p">,</span> <span class="n">dim</span> <span class="o">=</span> <span class="mi">1</span><span class="p">)</span>
+            
+    <span class="k">if</span> <span class="n">norm_update</span><span class="p">:</span>   
+         <span class="n">display</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">norm</span><span class="p">,</span> <span class="n">semilogy</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="n">title</span> <span class="o">=</span> <span class="s1">&#39;Resudual norm&#39;</span><span class="p">)</span>        </div>
+         
+<div class="viewcode-block" id="MULTI_PWLS"><a class="viewcode-back" href="../../flextomo.html#flextomo.project.MULTI_PWLS">[docs]</a><span class="k">def</span> <span class="nf">MULTI_PWLS</span><span class="p">(</span> <span class="n">projections</span><span class="p">,</span> <span class="n">volume</span><span class="p">,</span> <span class="n">geometries</span><span class="p">,</span> <span class="n">iterations</span> <span class="o">=</span> <span class="mi">10</span><span class="p">,</span> <span class="n">student</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">weight_power</span> <span class="o">=</span> <span class="mi">1</span><span class="p">):</span> 
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Penalized Weighted Least Squares based on multiple inputs.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="c1">#error log:</span>
+    <span class="k">global</span> <span class="n">settings</span>
+    <span class="n">norm</span> <span class="o">=</span> <span class="n">settings</span><span class="p">[</span><span class="s1">&#39;norm&#39;</span><span class="p">]</span>
+    <span class="n">block_number</span> <span class="o">=</span> <span class="n">settings</span><span class="p">[</span><span class="s1">&#39;block_number&#39;</span><span class="p">]</span>
+    <span class="n">mode</span> <span class="o">=</span> <span class="n">settings</span><span class="p">[</span><span class="s1">&#39;mode&#39;</span><span class="p">]</span>
+    
+    <span class="n">norm</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="n">fac</span> <span class="o">=</span> <span class="n">volume</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">*</span> <span class="n">geometries</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;img_pixel&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">numpy</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;PWLS-ing in progress...&#39;</span><span class="p">)</span>
+    <span class="n">sleep</span><span class="p">(</span><span class="mf">0.5</span><span class="p">)</span>
+                              
+    <span class="c1"># Iterations:</span>
+    <span class="k">for</span> <span class="n">ii</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">iterations</span><span class="p">)):</span>
+    
+        <span class="c1"># Error:</span>
+        <span class="n">L_mean</span> <span class="o">=</span> <span class="mi">0</span>
+        
+        <span class="c1">#Blocks:</span>
+        <span class="k">for</span> <span class="n">jj</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">block_number</span><span class="p">):</span>        
+            
+            <span class="c1"># Volume update:</span>
+            <span class="n">vol_tmp</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">volume</span><span class="p">)</span>
+            <span class="n">bwp_w</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">volume</span><span class="p">)</span>
+            
+            <span class="k">for</span> <span class="n">kk</span><span class="p">,</span> <span class="n">projs</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">projections</span><span class="p">):</span>
+                
+                <span class="n">index</span> <span class="o">=</span> <span class="n">_block_index_</span><span class="p">(</span><span class="n">jj</span><span class="p">,</span> <span class="n">block_number</span><span class="p">,</span> <span class="n">projs</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">mode</span><span class="p">)</span>
+                
+                <span class="n">proj</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">ascontiguousarray</span><span class="p">(</span><span class="n">projs</span><span class="p">[:,</span><span class="n">index</span><span class="p">,:])</span>
+                <span class="n">geom</span> <span class="o">=</span> <span class="n">geometries</span><span class="p">[</span><span class="n">kk</span><span class="p">]</span>
+
+                <span class="n">proj_geom</span> <span class="o">=</span> <span class="n">io</span><span class="o">.</span><span class="n">astra_proj_geom</span><span class="p">(</span><span class="n">geom</span><span class="p">,</span> <span class="n">projs</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">index</span> <span class="o">=</span> <span class="n">index</span><span class="p">)</span> 
+                <span class="n">vol_geom</span> <span class="o">=</span> <span class="n">io</span><span class="o">.</span><span class="n">astra_vol_geom</span><span class="p">(</span><span class="n">geom</span><span class="p">,</span> <span class="n">volume</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> 
+            
+                <span class="n">prj_tmp</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">proj</span><span class="p">)</span>
+                
+                <span class="c1"># Compute weights:</span>
+                <span class="k">if</span> <span class="n">student</span><span class="p">:</span>
+                    <span class="n">fwp_w</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">proj</span><span class="p">)</span>
+                    
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">me</span> <span class="o">=</span> <span class="n">proj</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="o">*</span> <span class="n">weight_power</span> <span class="o">/</span> <span class="mi">5</span>
+                    <span class="n">fwp_w</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">proj</span> <span class="o">*</span> <span class="n">weight_power</span> <span class="o">/</span> <span class="n">me</span><span class="p">)</span>
+                                        
+                <span class="c1">#fwp_w = scipy.ndimage.morphology.grey_erosion(fwp_w, size=(3,1,3))</span>
+                
+                <span class="n">_backproject_block_add_</span><span class="p">(</span><span class="n">fwp_w</span><span class="p">,</span> <span class="n">bwp_w</span><span class="p">,</span> <span class="n">proj_geom</span><span class="p">,</span> <span class="n">vol_geom</span><span class="p">,</span> <span class="s1">&#39;BP3D_CUDA&#39;</span><span class="p">)</span>
+                <span class="n">_forwardproject_block_add_</span><span class="p">(</span><span class="n">prj_tmp</span><span class="p">,</span> <span class="n">volume</span><span class="p">,</span> <span class="n">proj_geom</span><span class="p">,</span> <span class="n">vol_geom</span><span class="p">)</span>
+                
+                <span class="n">prj_tmp</span> <span class="o">=</span> <span class="p">(</span><span class="n">proj</span> <span class="o">-</span> <span class="n">prj_tmp</span><span class="p">)</span> <span class="o">*</span> <span class="n">fwp_w</span> <span class="o">/</span> <span class="n">fac</span>
+
+                <span class="k">if</span> <span class="n">student</span><span class="p">:</span>
+                    <span class="n">prj_tmp</span> <span class="o">=</span> <span class="n">_studentst_</span><span class="p">(</span><span class="n">prj_tmp</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
+                    
+                <span class="n">_backproject_block_add_</span><span class="p">(</span><span class="n">prj_tmp</span><span class="p">,</span> <span class="n">vol_tmp</span><span class="p">,</span> <span class="n">proj_geom</span><span class="p">,</span> <span class="n">vol_geom</span><span class="p">,</span> <span class="s1">&#39;BP3D_CUDA&#39;</span><span class="p">)</span>
+                
+                <span class="c1"># Mean L for projection</span>
+                <span class="n">L_mean</span> <span class="o">+=</span> <span class="p">(</span><span class="n">prj_tmp</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span> 
+                
+            <span class="n">eps</span> <span class="o">=</span> <span class="n">bwp_w</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="o">/</span> <span class="mi">1000</span>    
+            <span class="n">bwp_w</span><span class="p">[</span><span class="n">bwp_w</span> <span class="o">&lt;</span> <span class="n">eps</span><span class="p">]</span> <span class="o">=</span> <span class="n">eps</span>
+                
+            <span class="n">volume</span> <span class="o">+=</span> <span class="n">vol_tmp</span> <span class="o">/</span> <span class="n">bwp_w</span>
+            <span class="n">volume</span><span class="p">[</span><span class="n">volume</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+
+            <span class="c1">#print((volume&lt;0).sum())</span>
+                
+        <span class="n">norm</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">L_mean</span> <span class="o">/</span> <span class="n">block_number</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">projections</span><span class="p">))</span>
+        
+    <span class="n">display</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">norm</span><span class="p">),</span> <span class="n">semilogy</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>     </div>
+
+<div class="viewcode-block" id="L2_step"><a class="viewcode-back" href="../../flextomo.html#flextomo.project.L2_step">[docs]</a><span class="k">def</span> <span class="nf">L2_step</span><span class="p">(</span> <span class="n">projections</span><span class="p">,</span> <span class="n">volume</span><span class="p">,</span> <span class="n">geometry</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A single L2 minimization step. Supports blocking and subsets.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">global</span> <span class="n">settings</span>
+    <span class="n">norm_update</span> <span class="o">=</span> <span class="n">settings</span><span class="p">[</span><span class="s1">&#39;norm_update&#39;</span><span class="p">]</span>
+    <span class="n">block_number</span> <span class="o">=</span> <span class="n">settings</span><span class="p">[</span><span class="s1">&#39;block_number&#39;</span><span class="p">]</span>
+    <span class="n">bounds</span> <span class="o">=</span> <span class="n">settings</span><span class="p">[</span><span class="s1">&#39;bounds&#39;</span><span class="p">]</span>
+    <span class="n">poisson_weight</span> <span class="o">=</span> <span class="n">settings</span><span class="p">[</span><span class="s1">&#39;poisson_weight&#39;</span><span class="p">]</span>
+    <span class="n">mode</span> <span class="o">=</span> <span class="n">settings</span><span class="p">[</span><span class="s1">&#39;mode&#39;</span><span class="p">]</span>
+    
+    <span class="n">prj_weight</span> <span class="o">=</span> <span class="n">_astra_norm_</span><span class="p">(</span><span class="n">projections</span><span class="p">,</span> <span class="n">volume</span><span class="p">,</span> <span class="n">geometry</span><span class="p">,</span> <span class="s1">&#39;BP3D_CUDA&#39;</span><span class="p">)</span>
+      
+    <span class="c1"># Initialize ASTRA geometries:</span>
+    <span class="n">vol_geom</span> <span class="o">=</span> <span class="n">io</span><span class="o">.</span><span class="n">astra_vol_geom</span><span class="p">(</span><span class="n">geometry</span><span class="p">,</span> <span class="n">volume</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>      
+    
+    <span class="n">norm</span> <span class="o">=</span> <span class="mi">0</span>
+    
+    <span class="k">for</span> <span class="n">ii</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">block_number</span><span class="p">):</span>
+        
+        <span class="c1"># Create index slice to address projections:</span>
+        <span class="n">index</span> <span class="o">=</span> <span class="n">_block_index_</span><span class="p">(</span><span class="n">ii</span><span class="p">,</span> <span class="n">block_number</span><span class="p">,</span> <span class="n">projections</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">mode</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">index</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span> <span class="k">break</span>
+
+        <span class="c1"># Extract a block:</span>
+        <span class="n">proj_geom</span> <span class="o">=</span> <span class="n">io</span><span class="o">.</span><span class="n">astra_proj_geom</span><span class="p">(</span><span class="n">geometry</span><span class="p">,</span> <span class="n">projections</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">index</span> <span class="o">=</span> <span class="n">index</span><span class="p">)</span>    
+        
+        <span class="c1"># The block will contain the discrepancy eventually (that&#39;s why we need a copy):</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">mode</span> <span class="o">==</span> <span class="s1">&#39;sequential&#39;</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">block_number</span> <span class="o">==</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="n">block</span> <span class="o">=</span> <span class="n">projections</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+            
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">block</span> <span class="o">=</span> <span class="p">(</span><span class="n">projections</span><span class="p">[:,</span> <span class="n">index</span><span class="p">,</span> <span class="p">:])</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+            <span class="n">block</span> <span class="o">=</span> <span class="n">_contiguous_check_</span><span class="p">(</span><span class="n">block</span><span class="p">)</span>
+                
+        <span class="c1"># Forwardproject:</span>
+        <span class="n">_forwardproject_block_add_</span><span class="p">(</span><span class="n">block</span><span class="p">,</span> <span class="n">volume</span><span class="p">,</span> <span class="n">proj_geom</span><span class="p">,</span> <span class="n">vol_geom</span><span class="p">,</span> <span class="n">negative</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span>   
+                    
+        <span class="c1"># Take into account Poisson:</span>
+        <span class="k">if</span> <span class="n">poisson_weight</span><span class="p">:</span>
+            
+            <span class="c1"># Some formula representing the effect of photon starvation...</span>
+            <span class="n">block</span> <span class="o">*=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">projections</span><span class="p">[:,</span> <span class="n">index</span><span class="p">,</span> <span class="p">:])</span>
+            
+        <span class="n">block</span> <span class="o">*=</span> <span class="n">prj_weight</span> <span class="o">*</span> <span class="n">block_number</span>
+        
+        <span class="c1"># Apply ramp to reduce boundary effects:</span>
+        <span class="c1">#block = array.ramp(block, 0, 5, mode = &#39;linear&#39;)</span>
+        <span class="c1">#block = array.ramp(block, 2, 5, mode = &#39;linear&#39;)</span>
+                
+        <span class="c1"># L2 norm (use the last block to update):</span>
+        <span class="k">if</span> <span class="n">norm_update</span><span class="p">:</span>
+            <span class="n">norm</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">sqrt</span><span class="p">((</span><span class="n">block</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">())</span>
+          
+        <span class="c1"># Project</span>
+        <span class="n">_backproject_block_add_</span><span class="p">(</span><span class="n">block</span><span class="p">,</span> <span class="n">volume</span><span class="p">,</span> <span class="n">proj_geom</span><span class="p">,</span> <span class="n">vol_geom</span><span class="p">,</span> <span class="s1">&#39;BP3D_CUDA&#39;</span><span class="p">)</span>    
+    
+    <span class="k">if</span> <span class="n">norm_update</span><span class="p">:</span>
+        <span class="n">settings</span><span class="p">[</span><span class="s1">&#39;norm&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">norm</span> <span class="o">/</span> <span class="n">block_number</span><span class="p">)</span>  
+
+    <span class="c1"># Apply bounds</span>
+    <span class="k">if</span> <span class="n">bounds</span><span class="p">:</span>
+        <span class="n">numpy</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">volume</span><span class="p">,</span> <span class="n">a_min</span> <span class="o">=</span> <span class="n">bounds</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">a_max</span> <span class="o">=</span> <span class="n">bounds</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">out</span> <span class="o">=</span> <span class="n">volume</span><span class="p">)</span>   </div>
+    
+<div class="viewcode-block" id="FISTA_step"><a class="viewcode-back" href="../../flextomo.html#flextomo.project.FISTA_step">[docs]</a><span class="k">def</span> <span class="nf">FISTA_step</span><span class="p">(</span><span class="n">projections</span><span class="p">,</span> <span class="n">vol</span><span class="p">,</span> <span class="n">vol_old</span><span class="p">,</span> <span class="n">vol_t</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">geometry</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A single FISTA step. Supports blocking and subsets.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">global</span> <span class="n">settings</span>
+    <span class="n">norm_update</span> <span class="o">=</span> <span class="n">settings</span><span class="p">[</span><span class="s1">&#39;norm_update&#39;</span><span class="p">]</span>
+    <span class="n">block_number</span> <span class="o">=</span> <span class="n">settings</span><span class="p">[</span><span class="s1">&#39;block_number&#39;</span><span class="p">]</span>
+    <span class="n">bounds</span> <span class="o">=</span> <span class="n">settings</span><span class="p">[</span><span class="s1">&#39;bounds&#39;</span><span class="p">]</span>
+    <span class="n">poisson_weight</span> <span class="o">=</span> <span class="n">settings</span><span class="p">[</span><span class="s1">&#39;poisson_weight&#39;</span><span class="p">]</span>
+    <span class="n">mode</span> <span class="o">=</span> <span class="n">settings</span><span class="p">[</span><span class="s1">&#39;mode&#39;</span><span class="p">]</span>
+    
+    <span class="n">prj_weight</span> <span class="o">=</span> <span class="n">_astra_norm_</span><span class="p">(</span><span class="n">projections</span><span class="p">,</span> <span class="n">vol</span><span class="p">,</span> <span class="n">geometry</span><span class="p">,</span> <span class="s1">&#39;BP3D_CUDA&#39;</span><span class="p">)</span>
+    
+    <span class="c1"># Initialize ASTRA geometries:</span>
+    <span class="n">vol_geom</span> <span class="o">=</span> <span class="n">io</span><span class="o">.</span><span class="n">astra_vol_geom</span><span class="p">(</span><span class="n">geometry</span><span class="p">,</span> <span class="n">vol</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>      
+    
+    <span class="n">vol_old</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">vol</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>  
+    
+    <span class="n">t_old</span> <span class="o">=</span> <span class="n">t</span> 
+    <span class="n">t</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">numpy</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="mi">4</span> <span class="o">*</span> <span class="n">t</span><span class="o">**</span><span class="mi">2</span><span class="p">))</span><span class="o">/</span><span class="mi">2</span>
+
+    <span class="n">vol</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">vol_t</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    
+    <span class="n">norm</span> <span class="o">=</span> <span class="mi">0</span>
+    
+    <span class="k">for</span> <span class="n">ii</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">block_number</span><span class="p">):</span>
+        
+        <span class="c1"># Create index slice to address projections:</span>
+        <span class="n">index</span> <span class="o">=</span> <span class="n">_block_index_</span><span class="p">(</span><span class="n">ii</span><span class="p">,</span> <span class="n">block_number</span><span class="p">,</span> <span class="n">projections</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">mode</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">index</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span> <span class="k">break</span>
+
+        <span class="c1"># Extract a block:</span>
+        <span class="n">proj_geom</span> <span class="o">=</span> <span class="n">io</span><span class="o">.</span><span class="n">astra_proj_geom</span><span class="p">(</span><span class="n">geometry</span><span class="p">,</span> <span class="n">projections</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">index</span> <span class="o">=</span> <span class="n">index</span><span class="p">)</span>    
+        
+        <span class="c1"># Copy data to a block or simply pass a pointer to data itself if block is one.</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">mode</span> <span class="o">==</span> <span class="s1">&#39;sequential&#39;</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">block_number</span> <span class="o">==</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="n">block</span> <span class="o">=</span> <span class="n">projections</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+            
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">block</span> <span class="o">=</span> <span class="p">(</span><span class="n">projections</span><span class="p">[:,</span> <span class="n">index</span><span class="p">,</span> <span class="p">:])</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+            <span class="n">block</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">ascontiguousarray</span><span class="p">(</span><span class="n">block</span><span class="p">)</span>
+                
+        <span class="c1"># Forwardproject:</span>
+        <span class="n">_forwardproject_block_add_</span><span class="p">(</span><span class="n">block</span><span class="p">,</span> <span class="n">vol_t</span><span class="p">,</span> <span class="n">proj_geom</span><span class="p">,</span> <span class="n">vol_geom</span><span class="p">,</span> <span class="n">negative</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span>   
+                    
+        <span class="c1"># Take into account Poisson:</span>
+        <span class="k">if</span> <span class="n">poisson_weight</span><span class="p">:</span>
+            <span class="c1"># Some formula representing the effect of photon starvation...</span>
+            <span class="n">block</span> <span class="o">*=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">projections</span><span class="p">[:,</span> <span class="n">index</span><span class="p">,</span> <span class="p">:])</span>
+            
+        <span class="c1"># Normalization of the backprojection (depends on ASTRA):    </span>
+        <span class="n">block</span> <span class="o">*=</span> <span class="n">prj_weight</span> <span class="o">*</span> <span class="n">block_number</span>
+        
+        <span class="c1"># Apply ramp to reduce boundary effects:</span>
+        <span class="c1">#block = block = flexData.ramp(block, 2, 5, mode = &#39;linear&#39;)</span>
+        <span class="c1">#block = block = flexData.ramp(block, 0, 5, mode = &#39;linear&#39;)</span>
+                
+        <span class="c1"># L2 norm (use the last block to update):</span>
+        <span class="k">if</span> <span class="n">norm_update</span><span class="p">:</span>
+            <span class="n">norm</span> <span class="o">+=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">sqrt</span><span class="p">((</span><span class="n">block</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">())</span>
+          
+        <span class="c1"># Project</span>
+        <span class="n">_backproject_block_add_</span><span class="p">(</span><span class="n">block</span><span class="p">,</span> <span class="n">vol</span><span class="p">,</span> <span class="n">proj_geom</span><span class="p">,</span> <span class="n">vol_geom</span><span class="p">,</span> <span class="s1">&#39;BP3D_CUDA&#39;</span><span class="p">)</span>   
+        
+        <span class="n">vol_t</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">vol</span> <span class="o">+</span> <span class="p">((</span><span class="n">t_old</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="n">t</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">vol</span> <span class="o">-</span> <span class="n">vol_old</span><span class="p">)</span>
+          
+    <span class="k">if</span> <span class="n">norm_update</span><span class="p">:</span>
+        <span class="n">settings</span><span class="p">[</span><span class="s1">&#39;norm&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">norm</span> <span class="o">/</span> <span class="n">block_number</span><span class="p">)</span>    
+        
+    <span class="c1"># Apply bounds</span>
+    <span class="k">if</span> <span class="n">bounds</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">numpy</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">vol</span><span class="p">,</span> <span class="n">a_min</span> <span class="o">=</span> <span class="n">bounds</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">a_max</span> <span class="o">=</span> <span class="n">bounds</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">out</span> <span class="o">=</span> <span class="n">vol</span><span class="p">)</span>  </div>
+
+<div class="viewcode-block" id="EM_step"><a class="viewcode-back" href="../../flextomo.html#flextomo.project.EM_step">[docs]</a><span class="k">def</span> <span class="nf">EM_step</span><span class="p">(</span><span class="n">projections</span><span class="p">,</span> <span class="n">volume</span><span class="p">,</span> <span class="n">geometry</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A single Expecrtation Maximization step. Supports blocking and subsets.</span>
+<span class="sd">    &quot;&quot;&quot;</span>  
+    <span class="k">global</span> <span class="n">settings</span>
+    <span class="n">norm_update</span> <span class="o">=</span> <span class="n">settings</span><span class="p">[</span><span class="s1">&#39;norm_update&#39;</span><span class="p">]</span>
+    <span class="n">block_number</span> <span class="o">=</span> <span class="n">settings</span><span class="p">[</span><span class="s1">&#39;block_number&#39;</span><span class="p">]</span>
+    <span class="n">bounds</span> <span class="o">=</span> <span class="n">settings</span><span class="p">[</span><span class="s1">&#39;bounds&#39;</span><span class="p">]</span>
+    <span class="n">mode</span> <span class="o">=</span> <span class="n">settings</span><span class="p">[</span><span class="s1">&#39;mode&#39;</span><span class="p">]</span>
+    
+    <span class="n">prj_weight</span> <span class="o">=</span> <span class="n">_astra_norm_</span><span class="p">(</span><span class="n">projections</span><span class="p">,</span> <span class="n">volume</span><span class="p">,</span> <span class="n">geometry</span><span class="p">,</span> <span class="s1">&#39;BP3D_CUDA&#39;</span><span class="p">)</span> <span class="o">*</span> <span class="mi">2</span>
+      
+    <span class="c1"># Initialize ASTRA geometries:</span>
+    <span class="n">vol_geom</span> <span class="o">=</span> <span class="n">io</span><span class="o">.</span><span class="n">astra_vol_geom</span><span class="p">(</span><span class="n">geometry</span><span class="p">,</span> <span class="n">volume</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>      
+    
+    <span class="c1"># Norm update:</span>
+    <span class="n">norm</span> <span class="o">=</span> <span class="mi">0</span>
+    
+    <span class="k">for</span> <span class="n">ii</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">block_number</span><span class="p">):</span>
+        
+        <span class="c1"># Create index slice to address projections:</span>
+        <span class="n">index</span> <span class="o">=</span> <span class="n">_block_index_</span><span class="p">(</span><span class="n">ii</span><span class="p">,</span> <span class="n">block_number</span><span class="p">,</span> <span class="n">projections</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">mode</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">index</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span> <span class="k">break</span>
+
+        <span class="c1"># Extract a block:</span>
+        <span class="n">proj_geom</span> <span class="o">=</span> <span class="n">io</span><span class="o">.</span><span class="n">astra_proj_geom</span><span class="p">(</span><span class="n">geometry</span><span class="p">,</span> <span class="n">projections</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">index</span> <span class="o">=</span> <span class="n">index</span><span class="p">)</span>    
+        
+        <span class="c1"># Copy data to a block or simply pass a pointer to data itself if block is one.</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">mode</span> <span class="o">==</span> <span class="s1">&#39;sequential&#39;</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">block_number</span> <span class="o">==</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="n">block</span> <span class="o">=</span> <span class="n">projections</span>
+            
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">block</span> <span class="o">=</span> <span class="p">(</span><span class="n">projections</span><span class="p">[:,</span> <span class="n">index</span><span class="p">,</span> <span class="p">:])</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+                    
+        <span class="c1"># Reserve memory for a forward projection (keep it separate):</span>
+        <span class="n">resid</span> <span class="o">=</span> <span class="n">_contiguous_check_</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">block</span><span class="p">))</span>
+        
+        <span class="c1"># Forwardproject:</span>
+        <span class="n">_forwardproject_block_add_</span><span class="p">(</span><span class="n">resid</span><span class="p">,</span> <span class="n">volume</span><span class="p">,</span> <span class="n">proj_geom</span><span class="p">,</span> <span class="n">vol_geom</span><span class="p">)</span>   
+  
+        <span class="c1"># Compute residual:        </span>
+        <span class="n">resid</span><span class="p">[</span><span class="n">resid</span> <span class="o">&lt;</span> <span class="n">resid</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="o">/</span> <span class="mi">100</span><span class="p">]</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">inf</span>  
+        <span class="n">resid</span> <span class="o">=</span> <span class="p">(</span><span class="n">block</span> <span class="o">/</span> <span class="n">resid</span><span class="p">)</span>
+                    
+        <span class="c1"># L2 norm (use the last block to update):</span>
+        <span class="k">if</span> <span class="n">norm_update</span><span class="p">:</span>
+            <span class="n">res_pos</span> <span class="o">=</span> <span class="n">resid</span><span class="p">[</span><span class="n">resid</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">]</span>
+            <span class="n">norm</span> <span class="o">+=</span> <span class="n">res_pos</span><span class="o">.</span><span class="n">std</span><span class="p">()</span> <span class="o">/</span> <span class="n">res_pos</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+            
+        <span class="c1"># Project</span>
+        <span class="n">_backproject_block_mult_</span><span class="p">(</span><span class="n">resid</span> <span class="o">*</span> <span class="n">prj_weight</span> <span class="o">*</span> <span class="n">block_number</span><span class="p">,</span> <span class="n">volume</span><span class="p">,</span> <span class="n">proj_geom</span><span class="p">,</span> <span class="n">vol_geom</span><span class="p">,</span> <span class="s1">&#39;BP3D_CUDA&#39;</span><span class="p">)</span>    
+    
+    <span class="k">if</span> <span class="n">norm_update</span><span class="p">:</span>
+        <span class="n">settings</span><span class="p">[</span><span class="s1">&#39;norm&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">norm</span> <span class="o">/</span> <span class="n">block_number</span><span class="p">)</span>
+    
+    <span class="c1"># Apply bounds</span>
+    <span class="k">if</span> <span class="n">bounds</span><span class="p">:</span>
+        <span class="n">numpy</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">volume</span><span class="p">,</span> <span class="n">a_min</span> <span class="o">=</span> <span class="n">bounds</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">a_max</span> <span class="o">=</span> <span class="n">bounds</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">out</span> <span class="o">=</span> <span class="n">volume</span><span class="p">)</span>               </div>
+        
+<span class="k">def</span> <span class="nf">_pbar_start_</span><span class="p">(</span><span class="n">total</span><span class="p">,</span> <span class="n">unit</span> <span class="o">=</span> <span class="s1">&#39;it&#39;</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    If progress_bar is ON, initialize it.</span>
+<span class="sd">    &quot;&quot;&quot;</span>        
+    <span class="k">if</span> <span class="n">settings</span><span class="p">[</span><span class="s1">&#39;progress_bar&#39;</span><span class="p">]:</span>
+        <span class="k">return</span> <span class="n">tqdm</span><span class="p">(</span><span class="n">total</span> <span class="o">=</span> <span class="n">total</span><span class="p">,</span> <span class="n">unit</span> <span class="o">=</span> <span class="n">unit</span><span class="p">,</span> <span class="n">ascii</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span>
+    
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span>
+        
+<span class="k">def</span> <span class="nf">_pbar_update_</span><span class="p">(</span><span class="n">pbar</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">pbar</span><span class="p">:</span>
+        <span class="n">pbar</span><span class="o">.</span><span class="n">update</span><span class="p">()</span>
+        
+<span class="k">def</span> <span class="nf">_pbar_close_</span><span class="p">(</span><span class="n">pbar</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">pbar</span><span class="p">:</span>
+        <span class="n">pbar</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        
+<span class="k">def</span> <span class="nf">_astra_norm_</span><span class="p">(</span><span class="n">projections</span><span class="p">,</span> <span class="n">volume</span><span class="p">,</span> <span class="n">geometry</span><span class="p">,</span> <span class="n">algorithm</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Compute a normalization factor in backprojection operator....</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># This normalization is not done at ASTRA level at the moment:</span>
+    <span class="k">if</span> <span class="n">algorithm</span> <span class="o">==</span> <span class="s1">&#39;BP3D_CUDA&#39;</span><span class="p">:</span>
+        <span class="n">sam</span> <span class="o">=</span> <span class="n">geometry</span><span class="p">[</span><span class="s1">&#39;proj_sample&#39;</span><span class="p">]</span>
+        <span class="n">anisotropy</span> <span class="o">=</span> <span class="n">geometry</span><span class="p">[</span><span class="s1">&#39;vol_sample&#39;</span><span class="p">]</span>
+        
+        <span class="n">pix</span> <span class="o">=</span> <span class="p">(</span><span class="n">geometry</span><span class="p">[</span><span class="s1">&#39;img_pixel&#39;</span><span class="p">]</span><span class="o">**</span><span class="mi">4</span> <span class="o">*</span> <span class="n">anisotropy</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">anisotropy</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">anisotropy</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">*</span> <span class="n">anisotropy</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+        <span class="k">return</span> <span class="mi">1</span> <span class="o">/</span> <span class="p">(</span><span class="n">projections</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">//</span> <span class="n">sam</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">pix</span> <span class="o">*</span> <span class="nb">max</span><span class="p">(</span><span class="n">volume</span><span class="o">.</span><span class="n">shape</span><span class="p">))</span> 
+    
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="mi">1</span>        
+        
+<span class="k">def</span> <span class="nf">_backproject_block_add_</span><span class="p">(</span><span class="n">projections</span><span class="p">,</span> <span class="n">volume</span><span class="p">,</span> <span class="n">proj_geom</span><span class="p">,</span> <span class="n">vol_geom</span><span class="p">,</span> <span class="n">algorithm</span> <span class="o">=</span> <span class="s1">&#39;BP3D_CUDA&#39;</span><span class="p">,</span> <span class="n">negative</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Additive backprojection of a single block. </span>
+<span class="sd">    Use negative = True if you want subtraction instead of addition.</span>
+<span class="sd">    &quot;&quot;&quot;</span>           
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">negative</span><span class="p">:</span>
+            <span class="n">projections</span> <span class="o">*=</span> <span class="o">-</span><span class="mi">1</span>
+            
+        <span class="c1"># If volume is a memmap - create a temporary copy in RAM    </span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">volume</span><span class="p">,</span> <span class="n">numpy</span><span class="o">.</span><span class="n">memmap</span><span class="p">):</span>
+            <span class="n">vol_temp</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">ascontiguousarray</span><span class="p">(</span><span class="n">volume</span><span class="p">)</span>
+            
+            <span class="n">vol_id</span> <span class="o">=</span> <span class="n">astra</span><span class="o">.</span><span class="n">data3d</span><span class="o">.</span><span class="n">link</span><span class="p">(</span><span class="s1">&#39;-vol&#39;</span><span class="p">,</span> <span class="n">vol_geom</span><span class="p">,</span> <span class="n">vol_temp</span><span class="p">)</span>    
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">vol_id</span> <span class="o">=</span> <span class="n">astra</span><span class="o">.</span><span class="n">data3d</span><span class="o">.</span><span class="n">link</span><span class="p">(</span><span class="s1">&#39;-vol&#39;</span><span class="p">,</span> <span class="n">vol_geom</span><span class="p">,</span> <span class="n">volume</span><span class="p">)</span>    
+                    
+        <span class="n">sin_id</span> <span class="o">=</span> <span class="n">astra</span><span class="o">.</span><span class="n">data3d</span><span class="o">.</span><span class="n">link</span><span class="p">(</span><span class="s1">&#39;-sino&#39;</span><span class="p">,</span> <span class="n">proj_geom</span><span class="p">,</span> <span class="n">projections</span><span class="p">)</span>        
+        
+        
+        <span class="n">projector_id</span> <span class="o">=</span> <span class="n">astra</span><span class="o">.</span><span class="n">create_projector</span><span class="p">(</span><span class="s1">&#39;cuda3d&#39;</span><span class="p">,</span> <span class="n">proj_geom</span><span class="p">,</span> <span class="n">vol_geom</span><span class="p">)</span>
+        
+        <span class="c1"># We are using accumulate version to avoid creating additional copies of data.</span>
+        <span class="k">if</span> <span class="n">algorithm</span> <span class="o">==</span> <span class="s1">&#39;BP3D_CUDA&#39;</span><span class="p">:</span>
+            <span class="n">asex</span><span class="o">.</span><span class="n">accumulate_BP</span><span class="p">(</span><span class="n">projector_id</span><span class="p">,</span> <span class="n">vol_id</span><span class="p">,</span> <span class="n">sin_id</span><span class="p">)</span>                
+        <span class="k">elif</span> <span class="n">algorithm</span> <span class="o">==</span> <span class="s1">&#39;FDK_CUDA&#39;</span><span class="p">:</span>
+            <span class="n">asex</span><span class="o">.</span><span class="n">accumulate_FDK</span><span class="p">(</span><span class="n">projector_id</span><span class="p">,</span> <span class="n">vol_id</span><span class="p">,</span> <span class="n">sin_id</span><span class="p">)</span>               
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Unknown ASTRA algorithm type.&#39;</span><span class="p">)</span>
+            
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">volume</span><span class="p">,</span> <span class="n">numpy</span><span class="o">.</span><span class="n">memmap</span><span class="p">):</span>
+            <span class="n">volume</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">vol_temp</span>
+            
+                         
+    <span class="k">except</span><span class="p">:</span>
+        <span class="c1"># The idea here is that we try to delete data3d objects even if ASTRA crashed</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">negative</span><span class="p">:</span>
+                <span class="n">projections</span> <span class="o">*=</span> <span class="o">-</span><span class="mi">1</span>
+        
+            <span class="n">astra</span><span class="o">.</span><span class="n">algorithm</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="n">projector_id</span><span class="p">)</span>
+            <span class="n">astra</span><span class="o">.</span><span class="n">data3d</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="n">sin_id</span><span class="p">)</span>
+            <span class="n">astra</span><span class="o">.</span><span class="n">data3d</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="n">vol_id</span><span class="p">)</span>
+            
+        <span class="k">finally</span><span class="p">:</span>
+            <span class="n">info</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">exc_info</span><span class="p">()</span>
+            <span class="n">traceback</span><span class="o">.</span><span class="n">print_exception</span><span class="p">(</span><span class="o">*</span><span class="n">info</span><span class="p">)</span>        
+    
+    <span class="k">if</span> <span class="n">negative</span><span class="p">:</span>
+        <span class="n">projections</span> <span class="o">*=</span> <span class="o">-</span><span class="mi">1</span>
+    
+    <span class="n">astra</span><span class="o">.</span><span class="n">algorithm</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="n">projector_id</span><span class="p">)</span>
+    <span class="n">astra</span><span class="o">.</span><span class="n">data3d</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="n">sin_id</span><span class="p">)</span>
+    <span class="n">astra</span><span class="o">.</span><span class="n">data3d</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="n">vol_id</span><span class="p">)</span>  
+        
+<span class="k">def</span> <span class="nf">_backproject_block_mult_</span><span class="p">(</span> <span class="n">projections</span><span class="p">,</span> <span class="n">volume</span><span class="p">,</span> <span class="n">proj_geom</span><span class="p">,</span> <span class="n">vol_geom</span><span class="p">,</span> <span class="n">algorithm</span> <span class="o">=</span> <span class="s1">&#39;BP3D_CUDA&#39;</span><span class="p">,</span> <span class="n">operation</span> <span class="o">=</span> <span class="s1">&#39;+&#39;</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Multiplicative backprojection of a single block. </span>
+<span class="sd">    &quot;&quot;&quot;</span>           
+    <span class="k">try</span><span class="p">:</span>
+        <span class="c1"># Need to create a copy of the volume:</span>
+        <span class="n">volume_</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">volume</span><span class="p">)</span>
+        
+        <span class="n">sin_id</span> <span class="o">=</span> <span class="n">astra</span><span class="o">.</span><span class="n">data3d</span><span class="o">.</span><span class="n">link</span><span class="p">(</span><span class="s1">&#39;-sino&#39;</span><span class="p">,</span> <span class="n">proj_geom</span><span class="p">,</span> <span class="n">projections</span><span class="p">)</span>        
+        <span class="n">vol_id</span> <span class="o">=</span> <span class="n">astra</span><span class="o">.</span><span class="n">data3d</span><span class="o">.</span><span class="n">link</span><span class="p">(</span><span class="s1">&#39;-vol&#39;</span><span class="p">,</span> <span class="n">vol_geom</span><span class="p">,</span> <span class="n">volume_</span><span class="p">)</span>    
+        
+        <span class="n">projector_id</span> <span class="o">=</span> <span class="n">astra</span><span class="o">.</span><span class="n">create_projector</span><span class="p">(</span><span class="s1">&#39;cuda3d&#39;</span><span class="p">,</span> <span class="n">proj_geom</span><span class="p">,</span> <span class="n">vol_geom</span><span class="p">)</span>
+        
+        <span class="c1"># We are using accumulate version to avoid creating additional copies of data.</span>
+        <span class="k">if</span> <span class="n">algorithm</span> <span class="o">==</span> <span class="s1">&#39;BP3D_CUDA&#39;</span><span class="p">:</span>
+            <span class="n">asex</span><span class="o">.</span><span class="n">accumulate_BP</span><span class="p">(</span><span class="n">projector_id</span><span class="p">,</span> <span class="n">vol_id</span><span class="p">,</span> <span class="n">sin_id</span><span class="p">)</span>                
+        <span class="k">elif</span> <span class="n">algorithm</span> <span class="o">==</span> <span class="s1">&#39;FDK_CUDA&#39;</span><span class="p">:</span>
+            <span class="n">asex</span><span class="o">.</span><span class="n">accumulate_FDK</span><span class="p">(</span><span class="n">projector_id</span><span class="p">,</span> <span class="n">vol_id</span><span class="p">,</span> <span class="n">sin_id</span><span class="p">)</span>               
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Unknown ASTRA algorithm type.&#39;</span><span class="p">)</span>
+                         
+    <span class="k">except</span><span class="p">:</span>
+        <span class="c1"># The idea here is that we try to delete data3d objects even if ASTRA crashed</span>
+        <span class="k">try</span><span class="p">:</span>
+           
+            <span class="n">astra</span><span class="o">.</span><span class="n">algorithm</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="n">projector_id</span><span class="p">)</span>
+            <span class="n">astra</span><span class="o">.</span><span class="n">data3d</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="n">sin_id</span><span class="p">)</span>
+            <span class="n">astra</span><span class="o">.</span><span class="n">data3d</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="n">vol_id</span><span class="p">)</span>
+            
+        <span class="k">finally</span><span class="p">:</span>
+            <span class="n">info</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">exc_info</span><span class="p">()</span>
+            <span class="n">traceback</span><span class="o">.</span><span class="n">print_exception</span><span class="p">(</span><span class="o">*</span><span class="n">info</span><span class="p">)</span>        
+
+    <span class="n">volume</span> <span class="o">*=</span> <span class="n">volume_</span>
+    
+    <span class="n">astra</span><span class="o">.</span><span class="n">algorithm</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="n">projector_id</span><span class="p">)</span>
+    <span class="n">astra</span><span class="o">.</span><span class="n">data3d</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="n">sin_id</span><span class="p">)</span>
+    <span class="n">astra</span><span class="o">.</span><span class="n">data3d</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="n">vol_id</span><span class="p">)</span>      
+            
+<span class="k">def</span> <span class="nf">_forwardproject_block_add_</span><span class="p">(</span> <span class="n">projections</span><span class="p">,</span> <span class="n">volume</span><span class="p">,</span> <span class="n">proj_geom</span><span class="p">,</span> <span class="n">vol_geom</span><span class="p">,</span> <span class="n">negative</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Additive forwardprojection of a single block. </span>
+<span class="sd">    Use negative = True if you want subtraction instead of addition.</span>
+<span class="sd">    &quot;&quot;&quot;</span>           
+    
+    <span class="k">try</span><span class="p">:</span>
+        <span class="c1"># We are goint to negate the projections block and not the whole volume:</span>
+        <span class="k">if</span> <span class="n">negative</span><span class="p">:</span>
+            <span class="n">projections</span> <span class="o">*=</span> <span class="o">-</span><span class="mi">1</span>
+            
+        <span class="c1"># If volume is a memmap - create a temporary copy in RAM    </span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">volume</span><span class="p">,</span> <span class="n">numpy</span><span class="o">.</span><span class="n">memmap</span><span class="p">):</span>
+            <span class="n">vol_temp</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">ascontiguousarray</span><span class="p">(</span><span class="n">volume</span><span class="p">)</span>
+            
+            <span class="n">vol_id</span> <span class="o">=</span> <span class="n">astra</span><span class="o">.</span><span class="n">data3d</span><span class="o">.</span><span class="n">link</span><span class="p">(</span><span class="s1">&#39;-vol&#39;</span><span class="p">,</span> <span class="n">vol_geom</span><span class="p">,</span> <span class="n">vol_temp</span><span class="p">)</span>    
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">vol_id</span> <span class="o">=</span> <span class="n">astra</span><span class="o">.</span><span class="n">data3d</span><span class="o">.</span><span class="n">link</span><span class="p">(</span><span class="s1">&#39;-vol&#39;</span><span class="p">,</span> <span class="n">vol_geom</span><span class="p">,</span> <span class="n">volume</span><span class="p">)</span>        
+                
+        <span class="n">sin_id</span> <span class="o">=</span> <span class="n">astra</span><span class="o">.</span><span class="n">data3d</span><span class="o">.</span><span class="n">link</span><span class="p">(</span><span class="s1">&#39;-sino&#39;</span><span class="p">,</span> <span class="n">proj_geom</span><span class="p">,</span> <span class="n">projections</span><span class="p">)</span>        
+        
+        <span class="n">projector_id</span> <span class="o">=</span> <span class="n">astra</span><span class="o">.</span><span class="n">create_projector</span><span class="p">(</span><span class="s1">&#39;cuda3d&#39;</span><span class="p">,</span> <span class="n">proj_geom</span><span class="p">,</span> <span class="n">vol_geom</span><span class="p">)</span>
+        
+        <span class="c1"># Project!</span>
+        <span class="n">asex</span><span class="o">.</span><span class="n">accumulate_FP</span><span class="p">(</span><span class="n">projector_id</span><span class="p">,</span> <span class="n">vol_id</span><span class="p">,</span> <span class="n">sin_id</span><span class="p">)</span>
+        
+        <span class="c1"># Negate second time:</span>
+        <span class="k">if</span> <span class="n">negative</span><span class="p">:</span>
+            <span class="n">projections</span> <span class="o">*=</span> <span class="o">-</span><span class="mi">1</span>
+             
+    <span class="k">except</span><span class="p">:</span>
+        <span class="c1"># Always try to delete data3d:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">astra</span><span class="o">.</span><span class="n">algorithm</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="n">projector_id</span><span class="p">)</span>
+            <span class="n">astra</span><span class="o">.</span><span class="n">data3d</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="n">sin_id</span><span class="p">)</span>
+            <span class="n">astra</span><span class="o">.</span><span class="n">data3d</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="n">vol_id</span><span class="p">)</span>   
+        <span class="k">finally</span><span class="p">:</span>
+            <span class="n">info</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">exc_info</span><span class="p">()</span>
+            <span class="n">traceback</span><span class="o">.</span><span class="n">print_exception</span><span class="p">(</span><span class="o">*</span><span class="n">info</span><span class="p">)</span>
+        
+    <span class="n">astra</span><span class="o">.</span><span class="n">algorithm</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="n">projector_id</span><span class="p">)</span>
+    <span class="n">astra</span><span class="o">.</span><span class="n">data3d</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="n">sin_id</span><span class="p">)</span>
+    <span class="n">astra</span><span class="o">.</span><span class="n">data3d</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="n">vol_id</span><span class="p">)</span>   
+    
+<span class="k">def</span> <span class="nf">_contiguous_check_</span><span class="p">(</span> <span class="n">data</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Check if data is contiguous, if not - convert. This makes ASTRA happy.</span>
+<span class="sd">    Careful, it may copy the data and overflow RAM.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">data</span><span class="o">.</span><span class="n">flags</span><span class="p">[</span><span class="s1">&#39;C_CONTIGUOUS&#39;</span><span class="p">]:</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">ascontiguousarray</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+    
+    <span class="c1"># Check if data type is correct:</span>
+    <span class="k">if</span> <span class="n">data</span><span class="o">.</span><span class="n">dtype</span> <span class="o">!=</span> <span class="s1">&#39;float32&#39;</span><span class="p">:</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s1">&#39;float32&#39;</span><span class="p">)</span>
+        
+    <span class="c1"># Sometimes data shape is weird. Check.    </span>
+    <span class="k">if</span> <span class="nb">min</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s1">&#39;Strange data shape:&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">))</span>
+    
+    <span class="k">return</span> <span class="n">data</span>  
+
+<span class="k">def</span> <span class="nf">_block_index_</span><span class="p">(</span> <span class="n">ii</span><span class="p">,</span> <span class="n">block_number</span><span class="p">,</span> <span class="n">length</span><span class="p">,</span> <span class="n">mode</span> <span class="o">=</span> <span class="s1">&#39;sequential&#39;</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Create a slice for a projection block</span>
+<span class="sd">    &quot;&quot;&quot;</span>   
+    
+    <span class="c1"># Length of the block and the global index:</span>
+    <span class="n">block_length</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">length</span> <span class="o">/</span> <span class="n">block_number</span><span class="p">))</span>
+    <span class="n">index</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">length</span><span class="p">)</span>
+
+    <span class="c1"># Different indexing modes:    </span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">mode</span> <span class="o">==</span> <span class="s1">&#39;sequential&#39;</span><span class="p">)</span><span class="o">|</span><span class="p">(</span><span class="n">mode</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="c1"># Index = 0, 1, 2, 4</span>
+        <span class="k">pass</span>
+        
+    <span class="k">elif</span> <span class="n">mode</span> <span class="o">==</span> <span class="s1">&#39;random&#39;</span><span class="p">:</span>   
+        <span class="c1"># Index = 2, 3, 0, 1 for instance...        </span>
+        <span class="n">random</span><span class="o">.</span><span class="n">shuffle</span><span class="p">(</span><span class="n">index</span><span class="p">)</span>    
+         
+    <span class="k">elif</span> <span class="n">mode</span> <span class="o">==</span> <span class="s1">&#39;equidistant&#39;</span><span class="p">:</span>   
+        
+        <span class="c1"># Index = 0, 2, 1, 3   </span>
+        <span class="k">if</span> <span class="n">length</span> <span class="o">&gt;</span> <span class="n">block_length</span><span class="p">:</span>
+            <span class="n">index</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">mod</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">length</span><span class="p">)</span> <span class="o">*</span> <span class="n">block_length</span><span class="p">,</span> <span class="n">length</span><span class="p">)</span>
+            
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Equidistant formula doesnt work if block number == 1</span>
+            <span class="n">index</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">length</span><span class="p">)</span>
+        
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Indexer type not recognized! Use: sequential/random/equidistant&#39;</span><span class="p">)</span>
+    
+    <span class="n">first</span> <span class="o">=</span> <span class="n">ii</span> <span class="o">*</span> <span class="n">block_length</span>
+    <span class="n">last</span> <span class="o">=</span> <span class="nb">min</span><span class="p">((</span><span class="n">length</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="p">(</span><span class="n">ii</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">block_length</span><span class="p">))</span>
+    
+    <span class="k">if</span> <span class="n">last</span> <span class="o">&lt;=</span> <span class="n">first</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">[]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">index</span><span class="p">[</span><span class="n">first</span><span class="p">:</span><span class="n">last</span><span class="p">]</span>        
+
+
+<span class="k">def</span> <span class="nf">_studentst_</span><span class="p">(</span> <span class="n">res</span><span class="p">,</span> <span class="n">deg</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">scl</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    StudentsT routine</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="c1"># nD to 1D:</span>
+    <span class="n">shape</span> <span class="o">=</span> <span class="n">res</span><span class="o">.</span><span class="n">shape</span>
+    <span class="n">res</span> <span class="o">=</span> <span class="n">res</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span>
+    
+    <span class="c1"># Optimize scale:</span>
+    <span class="k">if</span> <span class="n">scl</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>    
+        <span class="n">fun</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">_misfit_</span><span class="p">(</span><span class="n">res</span><span class="p">[::</span><span class="mi">70</span><span class="p">],</span> <span class="n">x</span><span class="p">,</span> <span class="n">deg</span><span class="p">)</span>
+        <span class="n">scl</span> <span class="o">=</span> <span class="n">scipy</span><span class="o">.</span><span class="n">optimize</span><span class="o">.</span><span class="n">fmin</span><span class="p">(</span><span class="n">fun</span><span class="p">,</span> <span class="n">x0</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,],</span> <span class="n">disp</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="c1">#scl = numpy.percentile(numpy.abs(res), 90)</span>
+        <span class="c1">#print(scl)</span>
+        <span class="c1">#print(&#39;Scale in Student`s-T is:&#39;, scl)</span>
+        
+    <span class="c1"># Evaluate:    </span>
+    <span class="n">grad</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">_st_</span><span class="p">(</span><span class="n">res</span><span class="p">,</span> <span class="n">scl</span><span class="p">,</span> <span class="n">deg</span><span class="p">),</span> <span class="n">shape</span><span class="p">)</span>
+    
+    <span class="k">return</span> <span class="n">grad</span>
+
+<span class="k">def</span> <span class="nf">_misfit_</span><span class="p">(</span> <span class="n">res</span><span class="p">,</span> <span class="n">scl</span><span class="p">,</span> <span class="n">deg</span><span class="p">):</span>
+    
+    <span class="n">c</span> <span class="o">=</span> <span class="o">-</span><span class="n">numpy</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="n">res</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">scipy</span><span class="o">.</span><span class="n">special</span><span class="o">.</span><span class="n">gammaln</span><span class="p">((</span><span class="n">deg</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span> <span class="o">-</span> 
+            <span class="n">scipy</span><span class="o">.</span><span class="n">special</span><span class="o">.</span><span class="n">gammaln</span><span class="p">(</span><span class="n">deg</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span> <span class="o">-</span> <span class="o">.</span><span class="mi">5</span> <span class="o">*</span> <span class="n">numpy</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">pi</span><span class="o">*</span><span class="n">scl</span><span class="o">*</span><span class="n">deg</span><span class="p">))</span>
+    
+    <span class="k">return</span> <span class="n">c</span> <span class="o">+</span> <span class="o">.</span><span class="mi">5</span> <span class="o">*</span> <span class="p">(</span><span class="n">deg</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="nb">sum</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">numpy</span><span class="o">.</span><span class="n">conj</span><span class="p">(</span><span class="n">res</span><span class="p">)</span> <span class="o">*</span> <span class="n">res</span> <span class="o">/</span> <span class="p">(</span><span class="n">scl</span> <span class="o">*</span> <span class="n">deg</span><span class="p">)))</span>
+    
+<span class="k">def</span> <span class="nf">_st_</span><span class="p">(</span> <span class="n">res</span><span class="p">,</span> <span class="n">scl</span><span class="p">,</span> <span class="n">deg</span><span class="p">):</span>   
+    
+    <span class="n">grad</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">float32</span><span class="p">(</span><span class="n">scl</span> <span class="o">*</span> <span class="p">(</span><span class="n">deg</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">res</span> <span class="o">/</span> <span class="p">(</span><span class="n">scl</span> <span class="o">*</span> <span class="n">deg</span> <span class="o">+</span> <span class="n">numpy</span><span class="o">.</span><span class="n">conj</span><span class="p">(</span><span class="n">res</span><span class="p">)</span> <span class="o">*</span> <span class="n">res</span><span class="p">))</span>
+    
+    <span class="k">return</span> <span class="n">grad</span>
+      
+
+       
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2018, Author
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    
+    
+      <script type="text/javascript">
+          var DOCUMENTATION_OPTIONS = {
+              URL_ROOT:'../../',
+              VERSION:'',
+              LANGUAGE:'en',
+              COLLAPSE_INDEX:false,
+              FILE_SUFFIX:'.html',
+              HAS_SOURCE:  true,
+              SOURCELINK_SUFFIX: '.txt'
+          };
+      </script>
+        <script type="text/javascript" src="../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../_static/doctools.js"></script>
+    
+
+  
+
+  <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
