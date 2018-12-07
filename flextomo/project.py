@@ -109,7 +109,7 @@ def backproject( projections, volume, geometry, algorithm = 'BP3D_CUDA'):
         proj_geom = io.astra_proj_geom(geometry, projections.shape)    
         
         # Progress bar:
-        pbar = _pbar_start_(1)
+        #pbar = _pbar_start_(1)
 
         projections *= prj_weight
         
@@ -118,8 +118,8 @@ def backproject( projections, volume, geometry, algorithm = 'BP3D_CUDA'):
 
         projections /= prj_weight
         
-        _pbar_update_(pbar)
-        _pbar_close_(pbar)
+        #_pbar_update_(pbar)
+        #_pbar_close_(pbar)
         
     else:   
         # Here is the multi-block version:
@@ -128,7 +128,7 @@ def backproject( projections, volume, geometry, algorithm = 'BP3D_CUDA'):
         vol_geom = io.astra_vol_geom(geometry, volume.shape)
         
         # Progress bar:
-        pbar = _pbar_start_(block_number, 'block')
+        #pbar = _pbar_start_(block_number, 'block')
         
         # Loop over blocks:
         for ii in range(block_number):
@@ -151,9 +151,9 @@ def backproject( projections, volume, geometry, algorithm = 'BP3D_CUDA'):
                 # Backproject:    
                 _backproject_block_add_(block, volume, proj_geom, vol_geom, algorithm)  
             
-            _pbar_update_(pbar)
+            #_pbar_update_(pbar)
             
-        _pbar_close_(pbar)
+        #_pbar_close_(pbar)
         
         # ASTRA is not aware of the number of blocks:    
         volume /= projections.shape[1]
@@ -186,12 +186,12 @@ def forwardproject( projections, volume, geometry):
         proj_geom = io.astra_proj_geom(geometry, projections.shape)    
         
         # Progress bar:
-        pbar = _pbar_start_(1)
+        #pbar = _pbar_start_(1)
         
         _forwardproject_block_add_(projections, volume, proj_geom, vol_geom)
         
-        _pbar_update_(pbar)
-        _pbar_close_(pbar)
+        #_pbar_update_(pbar)
+        #_pbar_close_(pbar)
         
     else:   
         # Multi-block:
@@ -200,7 +200,7 @@ def forwardproject( projections, volume, geometry):
         vol_geom = io.astra_vol_geom(geometry, volume.shape)
         
         # Progress bar:
-        pbar = _pbar_start_(unit = 'block', total=block_number)
+        #pbar = _pbar_start_(unit = 'block', total=block_number)
         
         # Loop over blocks:
         for ii in range(block_number):
@@ -218,9 +218,9 @@ def forwardproject( projections, volume, geometry):
                 
                 projections[:, index,:] = block
                 
-                _pbar_update_(pbar)
+                #_pbar_update_(pbar)
             
-        _pbar_close_(pbar)
+        #_pbar_close_(pbar)
    
 def SIRT( projections, volume, geometry, iterations):
     """
@@ -349,6 +349,58 @@ def FISTA( projections, volume, geometry, iterations):
         
         else:
             FISTA_step(projections, volume, volume_old, volume_t, t, geometry)
+        
+        # Preview
+        if preview:
+            display.display_slice(volume, dim = 1)
+            
+    if norm_update:   
+         display.plot(settings['norm'], semilogy = True, title = 'Resudual norm')   
+         
+def CPLS(projections, volume, geometry, iterations, lambda_tv = 0.1):
+    """
+    Chambolle-Pock reconstruction with TV minimization.
+    """    
+    global settings
+    preview = settings['preview']
+    norm_update = settings['norm_update']
+    
+    # Sampling:
+    samp = geometry['proj_sample']
+    
+    # Initialize L2:
+    settings['norm'] = []
+    
+    # Init volumes:
+    vol_bar = numpy.ascontiguousarray(numpy.zeros_like(volume))
+    proj_p = numpy.ascontiguousarray(numpy.zeros_like(projections))
+    vol_q = numpy.zeros(numpy.concatenate(((len([0,1,2]), ), volume.shape)), dtype='float32')
+
+    # Switch off progress bar if preview is on...
+    if preview: 
+        ncols = 0
+    else:
+        ncols = 50
+    
+    print('Chambol & Pock are on it!')
+    sleep(0.3)
+        
+    # Switch off progress bar if preview is on...
+    if preview: 
+        ncols = 0
+    else:
+        ncols = 50
+        
+    for ii in tqdm(range(iterations), ncols = ncols):
+     # Update volume:
+        if sum(samp) > 3:
+            # Make step with subsampled data:
+            CPLS_step(projections[::samp[0], ::samp[1], ::samp[2]], 
+                      volume, vol_bar, vol_q, proj_p, geometry, lambda_tv)
+        
+        else:
+            # Step with full data:
+            CPLS_step(projections, volume, vol_bar, vol_q, proj_p, geometry, lambda_tv)
         
         # Preview
         if preview:
@@ -522,11 +574,7 @@ def L2_step( projections, volume, geometry):
             block *= numpy.exp(-projections[:, index, :])
             
         block *= prj_weight * block_number
-        
-        # Apply ramp to reduce boundary effects:
-        #block = array.ramp(block, 0, 5, mode = 'linear')
-        #block = array.ramp(block, 2, 5, mode = 'linear')
-                
+                        
         # L2 norm (use the last block to update):
         if norm_update:
             norm = numpy.sqrt((block ** 2).mean())
@@ -541,6 +589,120 @@ def L2_step( projections, volume, geometry):
     if bounds:
         numpy.clip(volume, a_min = bounds[0], a_max = bounds[1], out = volume)   
     
+def CPLS_step(projections, vol, vol_bar, vol_q, proj_p, geometry, lambda_tv):         
+    """
+    A single CPLS minimization step
+    """
+    global settings
+    norm_update = settings['norm_update']
+    block_number = settings['block_number']
+    bounds = settings['bounds']
+    poisson_weight = settings['poisson_weight']
+    mode = settings['mode']
+
+    # Sampling:
+    samp = geometry['proj_sample']
+    
+    shp = numpy.array(projections.shape)
+    shp //= samp
+    
+    # Weight needed to make sure A and At are adjoint: 
+    prj_weight = _astra_norm_(projections, vol, geometry, 'BP3D_CUDA')
+    
+    # Norm of A and At
+    bp_weight = _backprojector_norm_(vol.shape, geometry)
+    bp_weight = 0.39062488
+    fp_weight = _forwardprojector_norm_(vol.shape, geometry)
+    fp_weight = 3.5430822
+    
+    # Initialize ASTRA geometries:
+    vol_geom = io.astra_vol_geom(geometry, vol.shape)      
+    
+    norm = 0
+    
+    for ii in range(block_number):
+        
+        # Create index slice to address projections:
+        index = _block_index_(ii, block_number, projections.shape[1], mode)
+        if len(index) == 0: break
+
+        # Extract a block:
+        proj_geom = io.astra_proj_geom(geometry, projections.shape, index = index)    
+        
+        # The block will contain the discrepancy eventually (that's why we need a copy):
+        if (mode == 'sequential') & (block_number == 1):
+            block = projections.copy()
+            
+        else:
+            block = (projections[:, index, :]).copy()
+            block = _contiguous_check_(block)
+            
+        # Forwardproject:
+        _forwardproject_block_add_(block, vol_bar, proj_geom, vol_geom, negative = True)   
+                    
+        # Take into account Poisson:
+        if poisson_weight:       
+            # Some formula representing the effect of photon starvation...
+            block *= numpy.exp(-projections[:, index, :])
+            
+        # Why prj_weight is not applyed after backprojection??    
+        block *= block_number
+        
+        # Update p = p + (proj - vol_bar) / fp_weight / (1 + 1 / fp_weight)
+        p_block = proj_p[:, index, :]
+        p_block += block * 1/fp_weight
+        p_block /= (1 + 1/fp_weight)
+        
+        proj_p[:, index, :] = p_block # proj_p doesnt seem to update otherwise...
+        
+        print(ii, '*************')
+        print('p', p_block.max())
+        
+        # vol_new = vol.copy()
+        # vol_new = At(p)
+        vol_new = numpy.zeros_like(vol)
+        _backproject_block_add_(p_block * prj_weight, vol_new, proj_geom, vol_geom, 'BP3D_CUDA')    
+    
+        print('bp', vol_new.max())
+    
+        display.display_slice(vol_new, title = 'vol_new')	
+        
+        if lambda_tv == 0:
+            vol_new = vol + vol_new / bp_weight
+            
+        else:
+            vol_q += numpy.stack(array.gradient(vol_bar)) / 2
+            vol_q /= numpy.fmax(lambda_tv, numpy.sqrt((vol_q ** 2).sum(0)))
+            vol_q *= lambda_tv
+            
+            vol_new = vol + (vol_new + array.divergence(vol_q)) / (bp_weight + 2)
+         
+        # Apply nonnegativity    
+        if bounds:
+            numpy.clip(vol_new, a_min = bounds[0], a_max = bounds[1], out = vol_new)   
+            
+        #vol_bar = vol_new + (vol_new - vol)
+        vol_bar[:] = vol_new * 2
+        vol_bar -= vol
+        vol[:] = vol_new
+        
+        print('vol_bar', vol_bar.max())
+        
+        #display.display_slice(vol, title = 'vol')
+        #display.display_slice(array.divergence(vol_q), title = 'div')
+        print(scipy.linalg.norm(block))
+                        
+        # L2 norm (use the last block to update):
+        if norm_update:
+            norm = numpy.sqrt((block ** 2).mean())
+          
+    if norm_update:
+        settings['norm'].append(norm / block_number)  
+
+    # Apply bounds
+    #if bounds:
+    #    numpy.clip(vol, a_min = bounds[0], a_max = bounds[1], out = vol)         
+        
 def FISTA_step(projections, vol, vol_old, vol_t, t, geometry):
     """
     A single FISTA step. Supports blocking and subsets.
@@ -690,6 +852,26 @@ def _pbar_update_(pbar):
 def _pbar_close_(pbar):
     if pbar:
         pbar.close()
+
+def _forwardprojector_norm_(vol_shape, geometry):
+    """
+    Norm of the forward projection. Obtained through reverse engeneering.
+    """
+    # We assume that the longest possible ray equal to the diagonal of the volume:
+    width = numpy.sqrt((numpy.array(vol_shape)**2).sum())
+    img_pixel = geometry['img_pixel']
+    
+    return width * img_pixel
+
+def _backprojector_norm_(vol_shape, geometry):
+    """
+    Norm of the forward projection. Obtained through reverse engeneering.
+    """
+    # We assume that the longest possible ray equal to the diagonal of the volume:
+    width = numpy.sqrt((numpy.array(vol_shape)**2).sum())
+    img_pixel = geometry['img_pixel']
+    
+    return 1 / (img_pixel * width)
         
 def _astra_norm_(projections, volume, geometry, algorithm):
     """
