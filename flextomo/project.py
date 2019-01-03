@@ -128,7 +128,7 @@ def backproject( projections, volume, geometry, algorithm = 'BP3D_CUDA'):
         vol_geom = io.astra_vol_geom(geometry, volume.shape)
         
         # Progress bar:
-        #pbar = _pbar_start_(block_number, 'block')
+        # pbar = _pbar_start_(block_number, 'block')
         
         # Loop over blocks:
         for ii in range(block_number):
@@ -261,7 +261,7 @@ def SIRT( projections, volume, geometry, iterations):
             
         # Preview
         if preview:
-            display.display_slice(volume, dim = 1)
+            display.slice(volume, dim = 1)
             
     if norm_update:   
          display.plot(settings['norm'], semilogy = True, title = 'Resudual L2')   
@@ -302,7 +302,7 @@ def EM( projections, volume, geometry, iterations):
                     
         # Preview
         if preview:
-            display.display_slice(volume, dim = 1)
+            display.slice(volume, dim = 1)
             
     if norm_update:   
          display.plot(settings['norm'], semilogy = True, title = 'Resudual norm')      
@@ -352,7 +352,7 @@ def FISTA( projections, volume, geometry, iterations):
         
         # Preview
         if preview:
-            display.display_slice(volume, dim = 1)
+            display.slice(volume, dim = 1)
             
     if norm_update:   
          display.plot(settings['norm'], semilogy = True, title = 'Resudual norm')   
@@ -404,7 +404,7 @@ def CPLS(projections, volume, geometry, iterations, lambda_tv = 0.1):
         
         # Preview
         if preview:
-            display.display_slice(volume, dim = 1)
+            display.slice(volume, dim = 1)
             
     if norm_update:   
          display.plot(settings['norm'], semilogy = True, title = 'Resudual norm')   
@@ -447,7 +447,7 @@ def MULTI_SIRT( projections, volume, geometries, iterations):
                                     
         # Preview
         if preview:
-            display.display_slice(volume, dim = 1)
+            display.slice(volume, dim = 1)
             
     if norm_update:   
          display.plot(norm, semilogy = True, title = 'Resudual norm')        
@@ -574,7 +574,11 @@ def L2_step( projections, volume, geometry):
             block *= numpy.exp(-projections[:, index, :])
             
         block *= prj_weight * block_number
-                        
+        
+        # Apply ramp to reduce boundary effects:
+        #block = array.ramp(block, 0, 5, mode = 'linear')
+        #block = array.ramp(block, 2, 5, mode = 'linear')
+                
         # L2 norm (use the last block to update):
         if norm_update:
             norm = numpy.sqrt((block ** 2).mean())
@@ -665,7 +669,7 @@ def CPLS_step(projections, vol, vol_bar, vol_q, proj_p, geometry, lambda_tv):
     
         print('bp', vol_new.max())
     
-        display.display_slice(vol_new, title = 'vol_new')	
+        display.slice(vol_new, title = 'vol_new')	
         
         if lambda_tv == 0:
             vol_new = vol + vol_new / bp_weight
@@ -688,8 +692,8 @@ def CPLS_step(projections, vol, vol_bar, vol_q, proj_p, geometry, lambda_tv):
         
         print('vol_bar', vol_bar.max())
         
-        #display.display_slice(vol, title = 'vol')
-        #display.display_slice(array.divergence(vol_q), title = 'div')
+        #display.slice(vol, title = 'vol')
+        #display.slice(array.divergence(vol_q), title = 'div')
         print(scipy.linalg.norm(block))
                         
         # L2 norm (use the last block to update):
@@ -1026,7 +1030,7 @@ def _forwardproject_block_add_( projections, volume, proj_geom, vol_geom, negati
     astra.data3d.delete(sin_id)
     astra.data3d.delete(vol_id)   
     
-def _contiguous_check_( data):
+def _contiguous_check_(data):
     '''
     Check if data is contiguous, if not - convert. This makes ASTRA happy.
     Careful, it may copy the data and overflow RAM.
