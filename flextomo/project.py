@@ -78,7 +78,7 @@ def FDK( projections, volume, geometry):
     """
     backproject(projections, volume, geometry, 'FDK_CUDA')
 
-def backproject( projections, volume, geometry, algorithm = 'BP3D_CUDA'):
+def backproject( projections, volume, geometry, algorithm = 'BP3D_CUDA', sign = 1):
     """
     Backproject using standard ASTRA functionality. If data array is memmap, backprojection is done in blocks to save RAM.
     Args:
@@ -86,10 +86,10 @@ def backproject( projections, volume, geometry, algorithm = 'BP3D_CUDA'):
         volume      : output numpy.array (dtype = float32) with the following dimensions: [vrt, mag, hrz]
         geometry    : geometry description - one of threee types: 'simple', 'static_offsets', 'linear_offsets'
         algorithm   : ASTRA algorithm type ['BP3D_CUDA', 'FDK_CUDA' etc.]
+        sign        : either +1 or -1 (add or subtract the data)
     """
     global settings
     block_number = settings['block_number']
-    mode = settings['mode']
         
     # Check if projections should be subsampled:
     sam = geometry['proj_sample']
@@ -109,17 +109,17 @@ def backproject( projections, volume, geometry, algorithm = 'BP3D_CUDA'):
         proj_geom = io.astra_proj_geom(geometry, projections.shape)    
         
         # Progress bar:
-        pbar = _pbar_start_(1)
+        #pbar = _pbar_start_(1)
 
         projections *= prj_weight
         
         # ASTRA here...
-        _backproject_block_add_(projections, volume, proj_geom, vol_geom, algorithm)
+        _backproject_block_add_(projections, volume, proj_geom, vol_geom, algorithm, negative = (sign < 0))
 
         projections /= prj_weight
         
-        _pbar_update_(pbar)
-        _pbar_close_(pbar)
+        #_pbar_update_(pbar)
+        #_pbar_close_(pbar)
         
     else:   
         # Here is the multi-block version:
@@ -127,48 +127,48 @@ def backproject( projections, volume, geometry, algorithm = 'BP3D_CUDA'):
         # Initialize ASTRA volume geometry:
         vol_geom = io.astra_vol_geom(geometry, volume.shape)
         
+        # Random mode may not work for FDK since it doesn't guarantee coverage for all angles...
+        # Use mode = 'sequential'
+        index = _block_index_(block_number, projections.shape[1], 'sequential')
+        
         # Progress bar:
-        pbar = _pbar_start_(block_number, 'block')
+        #pbar = _pbar_start_(len(index), 'block')
         
         # Loop over blocks:
-        for ii in range(block_number):
-            
-            # Extract a block:
-            index = _block_index_(ii, block_number, projections.shape[1], mode)
-            if len(index) > 0: 
+        for ii in range(len(index)):
                 
-                proj_geom = io.astra_proj_geom(geometry, projections.shape, index)  
+                proj_geom = io.astra_proj_geom(geometry, projections.shape, index[ii])  
                 
                 # number of projections in a block can vary a bit and FDK is not aware of that...
-                block = projections[:, index,:] * prj_weight * len(index)
+                block = projections[:, index[ii], :] * prj_weight * len(index[ii])
                 
                 # BP and FDK behave differently in terms of normalization:
                 if (algorithm == 'BP3D_CUDA'):
-                    block *= block_number
+                    block *= len(index)
                     
                 block = _contiguous_check_(block)
     
                 # Backproject:    
-                _backproject_block_add_(block, volume, proj_geom, vol_geom, algorithm)  
+                _backproject_block_add_(block, volume, proj_geom, vol_geom, algorithm, negative = (sign < 0))  
             
-            _pbar_update_(pbar)
+            #_pbar_update_(pbar)
             
-        _pbar_close_(pbar)
+        #_pbar_close_(pbar)
         
         # ASTRA is not aware of the number of blocks:    
         volume /= projections.shape[1]
                        
-def forwardproject( projections, volume, geometry):
+def forwardproject( projections, volume, geometry, sign = 1):
     """
     Forwardproject using standard ASTRA functionality. If data array is memmap, projection is done in blocks to save RAM.
     Args:
         projections : output numpy.array (dtype = float32) with the following dimensions: [vrt, rot, hrz]
         volume      : input numpy.array (dtype = float32) with the following dimensions: [vrt, mag, hrz]
         geometry    : geometry description - one of threee types: 'simple', 'static_offsets', 'linear_offsets'
+        sign        : either +1 or -1 (add or subtract the data)
     """
     global settings
     block_number = settings['block_number']
-    mode = settings['mode']
     
     # Check if projections should be subsampled:
     sam = geometry['vol_sample']
@@ -186,12 +186,12 @@ def forwardproject( projections, volume, geometry):
         proj_geom = io.astra_proj_geom(geometry, projections.shape)    
         
         # Progress bar:
-        pbar = _pbar_start_(1)
+        #pbar = _pbar_start_(1)
         
-        _forwardproject_block_add_(projections, volume, proj_geom, vol_geom)
+        _forwardproject_block_add_(projections, volume, proj_geom, vol_geom, negative = (sign < 0))
         
-        _pbar_update_(pbar)
-        _pbar_close_(pbar)
+        #_pbar_update_(pbar)
+        #_pbar_close_(pbar)
         
     else:   
         # Multi-block:
@@ -200,27 +200,30 @@ def forwardproject( projections, volume, geometry):
         vol_geom = io.astra_vol_geom(geometry, volume.shape)
         
         # Progress bar:
-        pbar = _pbar_start_(unit = 'block', total=block_number)
+        #pbar = _pbar_start_(unit = 'block', total=block_number)
+        
+        # Random mode may not work for forward projection since it doesn't guarantee coverage for all angles...
+        # Use mode = 'sequential'.... it may not be true anymore...
+        index = _block_index_(block_number, projections.shape[1], 'sequential')
         
         # Loop over blocks:
-        for ii in range(block_number):
+        for ii in range(len(index)):
             
-            index = _block_index_(ii, block_number, projections.shape[1], mode)
             if len(index) > 0: 
         
                 # Extract a block:
-                proj_geom = io.astra_proj_geom(geometry, projections.shape, index)    
-                block = projections[:, index,:]
+                proj_geom = io.astra_proj_geom(geometry, projections.shape, index[ii])    
+                block = projections[:, index[ii],:]
                 block = _contiguous_check_(block)
                 
                 # Backproject:    
-                _forwardproject_block_add_(block, volume, proj_geom, vol_geom)  
+                _forwardproject_block_add_(block, volume, proj_geom, vol_geom, negative = (sign < 0))  
                 
-                projections[:, index,:] = block
+                projections[:, index[ii],:] = block
                 
-                _pbar_update_(pbar)
+                #_pbar_update_(pbar)
             
-        _pbar_close_(pbar)
+        #_pbar_close_(pbar)
    
 def SIRT( projections, volume, geometry, iterations):
     """
@@ -357,6 +360,134 @@ def FISTA( projections, volume, geometry, iterations):
     if norm_update:   
          display.plot(settings['norm'], semilogy = True, title = 'Resudual norm')   
          
+def CPLS(projections, volume, geometry, iterations, lambda_tv):
+    """
+    Chambolle-Pock reconstruction with TV minimization.
+    """ 
+    print('Work in progress....')
+    """
+    global settings
+    preview = settings['preview']
+    norm_update = settings['norm_update']
+    
+    # Sampling:
+    samp = geometry['proj_sample']
+    anisotropy = geometry['vol_sample']
+    
+    shp = numpy.array(projections.shape)
+    shp //= samp
+    
+    prj_weight = 1 / (shp[1] * numpy.prod(anisotropy) * max(volume.shape)) 
+    
+    # Initialize L2:
+    settings['norm'] = []
+    t = 1
+    
+    volume_t = volume.copy()
+    volume_old = volume.copy()
+
+    print('Chambol-Pock are doing their best...')
+    sleep(0.3)
+        
+    # Switch off progress bar if preview is on...
+    if preview: 
+        ncols = 0
+    else:
+        ncols = 50
+        
+    for ii in tqdm(range(iterations), ncols = ncols):
+     # Update volume:
+        if sum(samp) > 3:
+            proj = projections[::samp[0], ::samp[1], ::samp[2]]
+            CPLS_step(proj, prj_weight, volume, volume_old, volume_t, t, geometry)
+        
+        else:
+            CPLS_step(projections, volume, volume_old, volume_t, t, geometry)
+        
+        # Preview
+        if preview:
+            display.display_slice(volume, dim = 1)
+            
+    if norm_update:   
+         display.plot(settings['norm'], semilogy = True, title = 'Resudual norm')   
+         
+         
+         
+        
+    bounds = [0, 1000]    
+    
+    p = numpy.ascontiguousarray(numpy.zeros_like(proj))
+    
+    vol = project.init_volume(proj)
+    vol_bar = project.init_volume(proj)
+    
+    sigma = numpy.ascontiguousarray(numpy.zeros_like(proj))
+    project.forwardproject(sigma, (vol * 0 + 1), geom)
+    sigma = sigma.max()
+    
+    #sigma = 1.0 / (sigma + (sigma == 0))
+    #sigma_1 = 1.0  / (1.0 + sigma)
+    
+    tau = numpy.ascontiguousarray(numpy.zeros_like(vol))
+    project.backproject(proj * 0 + 1, tau, geom)
+    
+    tau[(tau / numpy.max(tau)) < 1e-5] = numpy.inf
+    tau = numpy.max(tau)
+    #tau = tau # + norm of divergence
+    #tau = 1 / tau
+    #tau= sigma
+    
+    l2_norms = numpy.zeros(iterations)
+    tru_norms = numpy.zeros(iterations)
+    
+    q = numpy.zeros(numpy.concatenate(((len([0,1,2]), ), vol.shape)), dtype='float32')
+            
+    # 
+    for ii in tqdm.tqdm(range(iterations)):    
+    
+        res = proj.copy()
+        project.forwardproject(res, -vol_bar, geom)
+        
+        p = (p + res * 1/sigma) / (1+1/sigma)
+        
+        #vol_new = vol.copy()
+        vol_new = numpy.zeros_like(vol)
+        project.backproject(p, vol_new, geom)
+        
+        if lambda_tv == 0:
+            vol_new = vol + vol_new / tau
+            
+        else:
+            q += numpy.stack(gradient(vol_bar)) / 2
+            q /= numpy.fmax(lambda_tv, numpy.sqrt((q ** 2).sum(0)))
+            q *= lambda_tv
+            
+            T = 1 / (tau + 2)
+            vol_new = vol + vol_new * T + divergence(q) * T
+            
+        #vol_new *= tau
+        #vol_new += vol
+        
+        numpy.clip(vol_new, a_min = bounds[0], a_max = bounds[1], out = vol_new)   
+            
+        vol_bar = vol_new + (vol_new - vol)
+        vol = vol_new
+        
+        #display.display_slice(vol)
+        
+        l2_norms[ii] = scipy.linalg.norm(res)
+        
+        tru_norms[ii] = scipy.linalg.norm(vol -  vol0)
+        
+    display.plot(l2_norms[:], title = 'L2 norm')    
+    display.plot(tru_norms[:], title = 'True norm')    
+    
+    display.display_slice(vol, title = 'vol')
+    display.display_slice(vol0, title = 'true')
+    
+    print('True norm:', scipy.linalg.norm(vol -  vol0))
+    """     
+    
 def MULTI_SIRT( projections, volume, geometries, iterations):
     """
     A multi-dataset version of SIRT. Here prjections and geometries are lists.
@@ -423,21 +554,25 @@ def MULTI_PWLS( projections, volume, geometries, iterations = 10, student = Fals
         # Error:
         L_mean = 0
         
+        # Create index slice to address projections:
+        theta_n = projections[0].shape[1]
+        index = _block_index_(block_number, theta_n, mode)
+        
+        # Here we assume that theta_n is hte same for all projection datasets. TODO: fix this!!
+            
         #Blocks:
-        for jj in range(block_number):        
+        for jj in range(len(index)):        
             
             # Volume update:
             vol_tmp = numpy.zeros_like(volume)
             bwp_w = numpy.zeros_like(volume)
-            
+                       
             for kk, projs in enumerate(projections):
-                
-                index = _block_index_(jj, block_number, projs.shape[1], mode)
-                
-                proj = numpy.ascontiguousarray(projs[:,index,:])
+                            
+                proj = numpy.ascontiguousarray(projs[:,index[jj],:])
                 geom = geometries[kk]
 
-                proj_geom = io.astra_proj_geom(geom, projs.shape, index = index) 
+                proj_geom = io.astra_proj_geom(geom, projs.shape, index = index[jj]) 
                 vol_geom = io.astra_vol_geom(geom, volume.shape) 
             
                 prj_tmp = numpy.zeros_like(proj)
@@ -473,11 +608,11 @@ def MULTI_PWLS( projections, volume, geometries, iterations = 10, student = Fals
 
             #print((volume<0).sum())
                 
-        norm.append(L_mean / block_number / len(projections))
+        norm.append(L_mean / len(index) / len(projections))
         
     display.plot(numpy.array(norm), semilogy=True)     
 
-def L2_step( projections, volume, geometry):
+def L2_step(projections, volume, geometry):
     """
     A single L2 minimization step. Supports blocking and subsets.
     """
@@ -495,21 +630,20 @@ def L2_step( projections, volume, geometry):
     
     norm = 0
     
-    for ii in range(block_number):
+    # Create index slice to address projections:
+    index = _block_index_(block_number, projections.shape[1], mode)
+    
+    for ii in range(len(index)):
         
-        # Create index slice to address projections:
-        index = _block_index_(ii, block_number, projections.shape[1], mode)
-        if len(index) == 0: break
-
         # Extract a block:
-        proj_geom = io.astra_proj_geom(geometry, projections.shape, index = index)    
+        proj_geom = io.astra_proj_geom(geometry, projections.shape, index = index[ii])    
         
         # The block will contain the discrepancy eventually (that's why we need a copy):
         if (mode == 'sequential') & (block_number == 1):
             block = projections.copy()
             
         else:
-            block = (projections[:, index, :]).copy()
+            block = (projections[:, index[ii], :]).copy()
             block = _contiguous_check_(block)
                 
         # Forwardproject:
@@ -519,9 +653,9 @@ def L2_step( projections, volume, geometry):
         if poisson_weight:
             
             # Some formula representing the effect of photon starvation...
-            block *= numpy.exp(-projections[:, index, :])
+            block *= numpy.exp(-projections[:, index[ii], :])
             
-        block *= prj_weight * block_number
+        block *= prj_weight * len(index)
         
         # Apply ramp to reduce boundary effects:
         #block = array.ramp(block, 0, 5, mode = 'linear')
@@ -535,7 +669,7 @@ def L2_step( projections, volume, geometry):
         _backproject_block_add_(block, volume, proj_geom, vol_geom, 'BP3D_CUDA')    
     
     if norm_update:
-        settings['norm'].append(norm / block_number)  
+        settings['norm'].append(norm / len(index))  
 
     # Apply bounds
     if bounds:
@@ -566,21 +700,20 @@ def FISTA_step(projections, vol, vol_old, vol_t, t, geometry):
     
     norm = 0
     
-    for ii in range(block_number):
+    # Create index slice to address projections:
+    index = _block_index_(block_number, projections.shape[1], mode)
+    
+    for ii in range(len(index)):
         
-        # Create index slice to address projections:
-        index = _block_index_(ii, block_number, projections.shape[1], mode)
-        if len(index) == 0: break
-
         # Extract a block:
-        proj_geom = io.astra_proj_geom(geometry, projections.shape, index = index)    
+        proj_geom = io.astra_proj_geom(geometry, projections.shape, index = index[ii])    
         
         # Copy data to a block or simply pass a pointer to data itself if block is one.
         if (mode == 'sequential') & (block_number == 1):
             block = projections.copy()
             
         else:
-            block = (projections[:, index, :]).copy()
+            block = (projections[:, index[ii], :]).copy()
             block = numpy.ascontiguousarray(block)
                 
         # Forwardproject:
@@ -589,11 +722,11 @@ def FISTA_step(projections, vol, vol_old, vol_t, t, geometry):
         # Take into account Poisson:
         if poisson_weight:
             # Some formula representing the effect of photon starvation...
-            block *= numpy.exp(-projections[:, index, :])
+            block *= numpy.exp(-projections[:, index[ii], :])
             
         # Normalization of the backprojection (depends on ASTRA):    
-        block *= prj_weight * block_number
-        
+        block *= prj_weight * len(index)
+            
         # Apply ramp to reduce boundary effects:
         #block = block = flexData.ramp(block, 2, 5, mode = 'linear')
         #block = block = flexData.ramp(block, 0, 5, mode = 'linear')
@@ -603,17 +736,27 @@ def FISTA_step(projections, vol, vol_old, vol_t, t, geometry):
             norm += numpy.sqrt((block ** 2).mean())
           
         # Project
-        _backproject_block_add_(block, vol, proj_geom, vol_geom, 'BP3D_CUDA')   
+        _backproject_block_add_(block, vol_t, proj_geom, vol_geom, 'BP3D_CUDA')   
         
-        vol_t[:] = vol + ((t_old - 1) / t) * (vol - vol_old)
+        # Apply bounds
+        if bounds is not None:
+            numpy.clip(vol_t, a_min = bounds[0], a_max = bounds[1], out = vol_old)  
+            
+        #vol_t[:] = vol + ((t_old - 1) / t) * (vol - vol_old)
+        #vol_t[:] = vol_old + t_old / t * (vol_t - vol_old)
+        vol_t[:] = vol_old + t_old / t * (vol_t - vol_old) + (t_old - 1) / t * (vol_old - vol)
+        
+        vol[:] = vol_old
           
     if norm_update:
-        settings['norm'].append(norm / block_number)    
-        
-    # Apply bounds
-    if bounds is not None:
-        numpy.clip(vol, a_min = bounds[0], a_max = bounds[1], out = vol)  
-
+        settings['norm'].append(norm / len(index))    
+    
+def L1_step(projections, vol, vol_old, vol_t, t, geometry):
+    """
+    TV minimization step for FISTA
+    """
+    pass
+    
 def EM_step(projections, volume, geometry):
     """
     A single Expecrtation Maximization step. Supports blocking and subsets.
@@ -632,21 +775,20 @@ def EM_step(projections, volume, geometry):
     # Norm update:
     norm = 0
     
-    for ii in range(block_number):
+    # Create index slice to address projections:
+    index = _block_index_(block_number, projections.shape[1], mode)
+    
+    for ii in range(len(index)):
         
-        # Create index slice to address projections:
-        index = _block_index_(ii, block_number, projections.shape[1], mode)
-        if len(index) == 0: break
-
         # Extract a block:
-        proj_geom = io.astra_proj_geom(geometry, projections.shape, index = index)    
+        proj_geom = io.astra_proj_geom(geometry, projections.shape, index = index[ii])    
         
         # Copy data to a block or simply pass a pointer to data itself if block is one.
         if (mode == 'sequential') & (block_number == 1):
             block = projections
             
         else:
-            block = (projections[:, index, :]).copy()
+            block = (projections[:, index[ii], :]).copy()
                     
         # Reserve memory for a forward projection (keep it separate):
         resid = _contiguous_check_(numpy.zeros_like(block))
@@ -664,10 +806,10 @@ def EM_step(projections, volume, geometry):
             norm += res_pos.std() / res_pos.mean()
             
         # Project
-        _backproject_block_mult_(resid * prj_weight * block_number, volume, proj_geom, vol_geom, 'BP3D_CUDA')    
+        _backproject_block_mult_(resid * prj_weight * len(index), volume, proj_geom, vol_geom, 'BP3D_CUDA')    
     
     if norm_update:
-        settings['norm'].append(norm / block_number)
+        settings['norm'].append(norm / len(index))
     
     # Apply bounds
     if bounds:
@@ -862,18 +1004,18 @@ def _contiguous_check_( data):
     
     return data  
 
-def _block_index_( ii, block_number, length, mode = 'sequential'):
+def _block_index_(block_number, length, mode = 'sequential'):
     """
-    Create a slice for a projection block
+    Create index for projection blocks
     """   
     
     # Length of the block and the global index:
-    block_length = int(numpy.round(length / block_number))
+    block_length = int(numpy.ceil(length / block_number))
     index = numpy.arange(length)
 
     # Different indexing modes:    
     if (mode == 'sequential')|(mode is None):
-        # Index = 0, 1, 2, 4
+        # Index = 0, 1, 2, 3
         pass
         
     elif mode == 'random':   
@@ -893,14 +1035,20 @@ def _block_index_( ii, block_number, length, mode = 'sequential'):
     else:
         raise ValueError('Indexer type not recognized! Use: sequential/random/equidistant')
     
-    first = ii * block_length
-    last = min((length + 1, (ii + 1) * block_length))
+    index_out = []
     
-    if last <= first:
-        return []
-    else:
-        return index[first:last]        
-
+    last = 0
+    first = 0
+    while last < length:
+        
+        last = min(length, first + block_length)
+        
+        if last > first:
+            index_out.append(index[first:last])
+            
+        first = min(length, first + block_length)    
+    
+    return index_out
 
 def _studentst_( res, deg = 1, scl = None):
     '''
