@@ -27,11 +27,11 @@ print('Volume width is:', 512 * geometry['img_pixel'])
 # Create phantom and project into proj:
 vol = phantom.abstract_nudes([1, 512, 512], geometry, complexity = 10)
 
-display.display_slice(vol, title = 'Phantom')
+display.slice(vol, title = 'Phantom')
 
 # Forward project:
 project.forwardproject(proj, vol, geometry)
-display.display_slice(proj, title = 'Sinogram')
+display.slice(proj, title = 'Sinogram')
 
 #%% Unfiltered back-project
 
@@ -42,7 +42,7 @@ vol_rec = numpy.zeros_like(vol)
 project.settings['block_number'] = 1
 project.backproject(proj, vol_rec, geometry)
 
-display.display_slice(vol_rec, title = 'Backprojection')
+display.slice(vol_rec, title = 'Backprojection')
 
 #%% Reconstruct
 
@@ -52,7 +52,7 @@ vol_rec = numpy.zeros_like(vol)
 # Use FDK:
 project.FDK(proj, vol_rec, geometry)
 
-display.display_slice(vol_rec, title = 'FDK')
+display.slice(vol_rec, title = 'FDK')
 
 #%% Use Expectation Maximization:
 
@@ -60,7 +60,7 @@ vol_rec = numpy.zeros_like(vol)
 
 project.EM(proj, vol_rec, geometry, iterations = 10)
 
-display.display_slice(vol_rec, title = 'EM')
+display.slice(vol_rec, title = 'EM')
 
 #%% SIRT
 
@@ -68,7 +68,7 @@ vol = numpy.zeros([1, 512, 512], dtype = 'float32')
 
 project.SIRT(proj, vol, geometry, iterations = 10)
 
-display.display_slice(vol, title = 'SIRT')
+display.slice(vol, title = 'SIRT')
 
 #%% FISTA
 
@@ -76,7 +76,7 @@ vol = numpy.zeros([1, 512, 512], dtype = 'float32')
 
 project.FISTA(proj, vol, geometry, iterations = 10)
 
-display.display_slice(vol, title = 'FISTA')
+display.slice(vol, title = 'FISTA')
 
 #%% SIRT with Subsets and non-negativity:
 
@@ -88,5 +88,5 @@ vol = numpy.zeros([1, 512, 512], dtype = 'float32')
 
 project.SIRT(proj, vol, geometry, iterations = 10)
 
-display.display_slice(vol, title = 'SIRT')
+display.slice(vol, title = 'SIRT')
 

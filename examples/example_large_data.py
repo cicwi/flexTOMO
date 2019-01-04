@@ -35,7 +35,7 @@ proj *= -1
 
 proj = array.raw2astra(proj)    
 
-display.display_slice(proj)
+display.slice(proj)
 
 #%% Recon
 
@@ -46,7 +46,7 @@ project.settings['block_number'] = 20
 
 project.FDK(proj, vol, meta['geometry'])
 
-display.display_slice(vol)
+display.slice(vol)
 
 #%% SIRT
 
@@ -57,4 +57,4 @@ project.settings['mode'] = 'equidistant'
 
 project.SIRT(proj, vol, meta['geometry'], iterations = 5)
 
-display.display_slice(vol, title = 'SIRT')
+display.slice(vol, title = 'SIRT')

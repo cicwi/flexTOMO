@@ -30,14 +30,14 @@ proj = -numpy.log(proj)
 
 proj = array.raw2astra(proj)    
 
-display.display_slice(proj, title = 'Sinogram. What else?')
+display.slice(proj, title = 'Sinogram. What else?')
 
 #%% FDK Recon
 
 vol = project.init_volume(proj)
 project.FDK(proj, vol, meta['geometry'])
 
-display.display_slice(vol, bounds = [], title = 'FDK')
+display.slice(vol, bounds = [], title = 'FDK')
 
 #%% EM
 
@@ -45,7 +45,7 @@ vol = numpy.ones([10, 2000, 2000], dtype = 'float32')
 
 project.EM(proj, vol, meta['geometry'], iterations = 3)
 
-display.display_slice(vol, title = 'EM')
+display.slice(vol, title = 'EM')
 
 #%% SIRT with additional options
 
@@ -57,4 +57,4 @@ project.settings['mode'] = 'equidistant'
 
 project.SIRT(proj, vol, meta['geometry'], iterations = 3)
 
-display.display_slice(vol, title = 'SIRT')
+display.slice(vol, title = 'SIRT')
