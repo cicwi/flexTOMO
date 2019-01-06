@@ -902,21 +902,23 @@ def FISTA_step(projections, vol, vol_old, vol_t, t, geometry):
             norm += numpy.sqrt((block ** 2).mean())
           
         # Project
-        _backproject_block_add_(block, vol_t, proj_geom, vol_geom, 'BP3D_CUDA')   
-        
-        # Apply bounds
-        if bounds is not None:
-            numpy.clip(vol_t, a_min = bounds[0], a_max = bounds[1], out = vol_old)  
+        _backproject_block_add_(block, vol, proj_geom, vol_geom, 'BP3D_CUDA')   
             
         #vol_t[:] = vol + ((t_old - 1) / t) * (vol - vol_old)
         #vol_t[:] = vol_old + t_old / t * (vol_t - vol_old)
-        vol_t[:] = vol_old + t_old / t * (vol_t - vol_old) + (t_old - 1) / t * (vol_old - vol)
+        #vol_t[:] = vol_old + t_old / t * (vol_t - vol_old) + (t_old - 1) / t * (vol_old - vol)
+        #vol[:] = vol_old
         
-        vol[:] = vol_old
+        vol_t[:] = vol + ((t_old - 1) / t) * (vol - vol_old)
           
     if norm_update:
         settings['norm'].append(norm / len(index))    
     
+    # Apply bounds
+    if bounds is not None:
+        numpy.clip(vol, a_min = bounds[0], a_max = bounds[1], out = vol)  
+        
+        
 def L1_step(projections, vol, vol_old, vol_t, t, geometry):
     """
     TV minimization step for FISTA
