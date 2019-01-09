@@ -219,6 +219,18 @@ to compute dimensions correctly.</p>
 A lone traveller seeking for some algorithms can find bits and pieces of SIRT, FISTA and more.
 We will do our best to be memmap compatible and make sure that large data will not make your PC sink into dispair.</p>
 <dl class="function">
+<dt id="flextomo.project.CPLS">
+<code class="descclassname">flextomo.project.</code><code class="descname">CPLS</code><span class="sig-paren">(</span><em>projections</em>, <em>volume</em>, <em>geometry</em>, <em>iterations</em>, <em>lambda_tv</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/flextomo/project.html#CPLS"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#flextomo.project.CPLS" title="Permalink to this definition">¶</a></dt>
+<dd><p>Chambolle-Pock reconstruction with TV minimization.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="flextomo.project.CPLS_step">
+<code class="descclassname">flextomo.project.</code><code class="descname">CPLS_step</code><span class="sig-paren">(</span><em>projections</em>, <em>vol</em>, <em>vol_bar</em>, <em>vol_q</em>, <em>proj_p</em>, <em>geometry</em>, <em>lambda_tv</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/flextomo/project.html#CPLS_step"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#flextomo.project.CPLS_step" title="Permalink to this definition">¶</a></dt>
+<dd><p>A single CPLS minimization step</p>
+</dd></dl>
+
+<dl class="function">
 <dt id="flextomo.project.EM">
 <code class="descclassname">flextomo.project.</code><code class="descname">EM</code><span class="sig-paren">(</span><em>projections</em>, <em>volume</em>, <em>geometry</em>, <em>iterations</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/flextomo/project.html#EM"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#flextomo.project.EM" title="Permalink to this definition">¶</a></dt>
 <dd><p>Expectation Maximization</p>
@@ -254,6 +266,12 @@ geometry    : geometry description - one of threee types: ‘simple’, ‘stati
 </dd></dl>
 
 <dl class="function">
+<dt id="flextomo.project.L1_step">
+<code class="descclassname">flextomo.project.</code><code class="descname">L1_step</code><span class="sig-paren">(</span><em>projections</em>, <em>vol</em>, <em>vol_old</em>, <em>vol_t</em>, <em>t</em>, <em>geometry</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/flextomo/project.html#L1_step"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#flextomo.project.L1_step" title="Permalink to this definition">¶</a></dt>
+<dd><p>TV minimization step for FISTA</p>
+</dd></dl>
+
+<dl class="function">
 <dt id="flextomo.project.L2_step">
 <code class="descclassname">flextomo.project.</code><code class="descname">L2_step</code><span class="sig-paren">(</span><em>projections</em>, <em>volume</em>, <em>geometry</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/flextomo/project.html#L2_step"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#flextomo.project.L2_step" title="Permalink to this definition">¶</a></dt>
 <dd><p>A single L2 minimization step. Supports blocking and subsets.</p>
@@ -279,25 +297,27 @@ geometry    : geometry description - one of threee types: ‘simple’, ‘stati
 
 <dl class="function">
 <dt id="flextomo.project.backproject">
-<code class="descclassname">flextomo.project.</code><code class="descname">backproject</code><span class="sig-paren">(</span><em>projections</em>, <em>volume</em>, <em>geometry</em>, <em>algorithm='BP3D_CUDA'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/flextomo/project.html#backproject"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#flextomo.project.backproject" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">flextomo.project.</code><code class="descname">backproject</code><span class="sig-paren">(</span><em>projections</em>, <em>volume</em>, <em>geometry</em>, <em>algorithm='BP3D_CUDA'</em>, <em>sign=1</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/flextomo/project.html#backproject"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#flextomo.project.backproject" title="Permalink to this definition">¶</a></dt>
 <dd><p>Backproject using standard ASTRA functionality. If data array is memmap, backprojection is done in blocks to save RAM.
 Args:</p>
 <blockquote>
 <div>projections : input numpy.array (dtype = float32) with the following dimensions: [vrt, rot, hrz]
 volume      : output numpy.array (dtype = float32) with the following dimensions: [vrt, mag, hrz]
 geometry    : geometry description - one of threee types: ‘simple’, ‘static_offsets’, ‘linear_offsets’
-algorithm   : ASTRA algorithm type [‘BP3D_CUDA’, ‘FDK_CUDA’ etc.]</div></blockquote>
+algorithm   : ASTRA algorithm type [‘BP3D_CUDA’, ‘FDK_CUDA’ etc.]
+sign        : either +1 or -1 (add or subtract the data)</div></blockquote>
 </dd></dl>
 
 <dl class="function">
 <dt id="flextomo.project.forwardproject">
-<code class="descclassname">flextomo.project.</code><code class="descname">forwardproject</code><span class="sig-paren">(</span><em>projections</em>, <em>volume</em>, <em>geometry</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/flextomo/project.html#forwardproject"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#flextomo.project.forwardproject" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">flextomo.project.</code><code class="descname">forwardproject</code><span class="sig-paren">(</span><em>projections</em>, <em>volume</em>, <em>geometry</em>, <em>sign=1</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/flextomo/project.html#forwardproject"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#flextomo.project.forwardproject" title="Permalink to this definition">¶</a></dt>
 <dd><p>Forwardproject using standard ASTRA functionality. If data array is memmap, projection is done in blocks to save RAM.
 Args:</p>
 <blockquote>
 <div>projections : output numpy.array (dtype = float32) with the following dimensions: [vrt, rot, hrz]
 volume      : input numpy.array (dtype = float32) with the following dimensions: [vrt, mag, hrz]
-geometry    : geometry description - one of threee types: ‘simple’, ‘static_offsets’, ‘linear_offsets’</div></blockquote>
+geometry    : geometry description - one of threee types: ‘simple’, ‘static_offsets’, ‘linear_offsets’
+sign        : either +1 or -1 (add or subtract the data)</div></blockquote>
 </dd></dl>
 
 <dl class="function">

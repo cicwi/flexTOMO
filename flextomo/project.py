@@ -1040,7 +1040,10 @@ def _backproject_block_add_(projections, volume, proj_geom, vol_geom, algorithm 
     """
     Additive backprojection of a single block. 
     Use negative = True if you want subtraction instead of addition.
-    """           
+    """  
+    
+    _contiguous_check_(volume, allow_copy = False) 
+         
     try:
         if negative:
             projections *= -1
@@ -1134,7 +1137,9 @@ def _forwardproject_block_add_( projections, volume, proj_geom, vol_geom, negati
     """
     Additive forwardprojection of a single block. 
     Use negative = True if you want subtraction instead of addition.
-    """           
+    """      
+
+    _contiguous_check_(projections, allow_copy = False)      
     
     try:
         # We are goint to negate the projections block and not the whole volume:
@@ -1174,23 +1179,30 @@ def _forwardproject_block_add_( projections, volume, proj_geom, vol_geom, negati
     astra.data3d.delete(sin_id)
     astra.data3d.delete(vol_id)   
     
-def _contiguous_check_(data):
+def _contiguous_check_(data, allow_copy = True):
     '''
     Check if data is contiguous, if not - convert. This makes ASTRA happy.
     Careful, it may copy the data and overflow RAM.
     '''
     if not data.flags['C_CONTIGUOUS']:
+        if not allow_copy:
+            raise Exception('Data is not contiguous!')
+            
         data = numpy.ascontiguousarray(data)
     
     # Check if data type is correct:
     if data.dtype != 'float32':
+        if not allow_copy:
+            raise Exception('Data type is not float32!')
+            
         data = data.astype('float32')
         
     # Sometimes data shape is weird. Check.    
     if min(data.shape) == 0:
         raise Exception('Strange data shape:' + str(data.shape))
     
-    return data  
+    if allow_copy:
+        return data  
 
 def _block_index_(block_number, length, mode = 'sequential'):
     """
