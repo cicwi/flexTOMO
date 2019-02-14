@@ -17,11 +17,11 @@ import numpy
     
 path = '/ufs/ciacc/flexbox/al_test/90KV_no_filt/'
 
-dark = io.read_tiffs(path, 'di00')
-flat = io.read_tiffs(path, 'io00')    
-proj = io.read_tiffs(path, 'scan_')
+dark = io.read_stack(path, 'di00')
+flat = io.read_stack(path, 'io00')    
+proj = io.read_stack(path, 'scan_')
 
-meta = io.read_meta(path, 'flexray')   
+geom = io.read_flexraylog(path)   
  
 #%% Prepro:
     
@@ -35,7 +35,7 @@ display.slice(proj, title = 'Sinogram. What else?')
 #%% FDK Recon
 
 vol = project.init_volume(proj)
-project.FDK(proj, vol, meta['geometry'])
+project.FDK(proj, vol, geom)
 
 display.slice(vol, bounds = [], title = 'FDK')
 
@@ -43,7 +43,7 @@ display.slice(vol, bounds = [], title = 'FDK')
 
 vol = numpy.ones([10, 2000, 2000], dtype = 'float32')
 
-project.EM(proj, vol, meta['geometry'], iterations = 3)
+project.EM(proj, vol, geom, iterations = 3)
 
 display.slice(vol, title = 'EM')
 
@@ -52,9 +52,9 @@ display.slice(vol, title = 'EM')
 vol = numpy.zeros([1, 2000, 2000], dtype = 'float32')
 
 project.settings['bounds'] = [0, 10]
-project.settings['block_number'] = 20
+project.settings['block_number'] = 10
 project.settings['mode'] = 'equidistant'
 
-project.SIRT(proj, vol, meta['geometry'], iterations = 3)
+project.SIRT(proj, vol, geom, iterations = 3)
 
 display.slice(vol, title = 'SIRT')

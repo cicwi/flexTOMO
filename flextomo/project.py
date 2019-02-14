@@ -52,19 +52,17 @@ def init_volume(projections, geometry = None):
     
     if geometry:
         '''
-        sample = geometry['proj_sample']
+        sample = geometry.det_sample
 
-        offset = int(abs(geometry['vol_tra'][2]) / geometry['img_pixel'] / sample[2])
+        offset = int(abs(geometry.parameters['vol_tra'][2]) / geometry.voxel / sample[2])
         '''
-        shape = array.volume_shape(projections.shape, geometry)
+        shape = geometry.volume_shape(projections.shape)
         
     else:
-        offset = 0
-        
         sample = [1, 1, 1]
 
         shape = projections[::sample[0], ::sample[1], ::sample[2]].shape
-        shape = [shape[0], shape[2]+offset, shape[2]+offset]
+        shape = [shape[0], shape[2], shape[2]]
     
     return numpy.zeros(shape, dtype = 'float32')
 
@@ -92,7 +90,8 @@ def backproject( projections, volume, geometry, algorithm = 'BP3D_CUDA', sign = 
     block_number = settings['block_number']
         
     # Check if projections should be subsampled:
-    sam = geometry['proj_sample']
+    sam = geometry.det_sample
+    
     if sum(sam) > 3:
         projections = projections[::sam[0], ::sam[1], ::sam[2]]
         
@@ -105,8 +104,8 @@ def backproject( projections, volume, geometry, algorithm = 'BP3D_CUDA', sign = 
         projections = _contiguous_check_(projections) 
         
         # Initialize ASTRA geometries:
-        vol_geom = io.astra_vol_geom(geometry, volume.shape)
-        proj_geom = io.astra_proj_geom(geometry, projections.shape)    
+        vol_geom = geometry.astra_volume_geom(volume.shape)
+        proj_geom = geometry.astra_projection_geom(projections.shape)  
         
         # Progress bar:
         #pbar = _pbar_start_(1)
@@ -125,7 +124,7 @@ def backproject( projections, volume, geometry, algorithm = 'BP3D_CUDA', sign = 
         # Here is the multi-block version:
         
         # Initialize ASTRA volume geometry:
-        vol_geom = io.astra_vol_geom(geometry, volume.shape)
+        vol_geom = geometry.astra_volume_geom(volume.shape)
         
         # Random mode may not work for FDK since it doesn't guarantee coverage for all angles...
         # Use mode = 'sequential'
@@ -137,7 +136,7 @@ def backproject( projections, volume, geometry, algorithm = 'BP3D_CUDA', sign = 
         # Loop over blocks:
         for ii in range(len(index)):
                 
-                proj_geom = io.astra_proj_geom(geometry, projections.shape, index[ii])  
+                proj_geom = geometry.astra_projection_geom(projections.shape, index[ii])  
                 
                 # number of projections in a block can vary a bit and FDK is not aware of that...
                 block = projections[:, index[ii], :] * prj_weight * len(index[ii])
@@ -172,7 +171,8 @@ def forwardproject( projections, volume, geometry, sign = 1):
     block_number = settings['block_number']
     
     # Check if projections should be subsampled:
-    sam = geometry['vol_sample']
+    sam = geometry.vol_sample
+    
     if sum(sam) > 3:
         volume = volume[sam[0], sam[1], sam[2]]
     
@@ -183,8 +183,8 @@ def forwardproject( projections, volume, geometry, sign = 1):
     if block_number == 1:
         
         # Initialize ASTRA geometries:
-        vol_geom = io.astra_vol_geom(geometry, volume.shape)
-        proj_geom = io.astra_proj_geom(geometry, projections.shape)    
+        vol_geom = geometry.astra_volume_geom(volume.shape)
+        proj_geom = geometry.astra_projection_geom(projections.shape)  
         
         # Progress bar:
         #pbar = _pbar_start_(1)
@@ -198,7 +198,7 @@ def forwardproject( projections, volume, geometry, sign = 1):
         # Multi-block:
         
         # Initialize ASTRA geometries:
-        vol_geom = io.astra_vol_geom(geometry, volume.shape)
+        vol_geom = geometry.astra_volume_geom(volume.shape)
         
         # Progress bar:
         #pbar = _pbar_start_(unit = 'block', total=block_number)
@@ -213,7 +213,7 @@ def forwardproject( projections, volume, geometry, sign = 1):
             if len(index) > 0: 
         
                 # Extract a block:
-                proj_geom = io.astra_proj_geom(geometry, projections.shape, index[ii])    
+                proj_geom = geometry.astra_projection_geom(projections.shape, index[ii])    
                 block = projections[:, index[ii],:]
                 block = _contiguous_check_(block)
                 
@@ -316,10 +316,10 @@ def FISTA( projections, volume, geometry, iterations, lmbda = 0):
     norm_update = settings['norm_update']
     
     # Sampling:
-    samp = geometry['proj_sample']
+    samp = geometry.det_sample
     
-    shp = numpy.array(projections.shape)
-    shp //= samp
+    #shp = numpy.array(projections.shape)
+    #shp //= samp
                         
     # Initialize L2:
     norms = []
@@ -370,7 +370,7 @@ def CPLS(projections, volume, geometry, iterations, lambda_tv = 0.1):
     norm_update = settings['norm_update']
     
     # Sampling:
-    samp = geometry['proj_sample']
+    samp = geometry.det_sample
     
     # Initialize L2:
     settings['norm'] = []
@@ -424,8 +424,8 @@ def CPLS(projections, volume, geometry, iterations, lambda_tv = 0.1):
     norm_update = settings['norm_update']
     
     # Sampling:
-    samp = geometry['proj_sample']
-    anisotropy = geometry['vol_sample']
+    samp = geometry.det_sample
+    anisotropy = geometry.vol_sample
     
     shp = numpy.array(projections.shape)
     shp //= samp
@@ -596,7 +596,7 @@ def MULTI_PWLS( projections, volume, geometries, iterations = 10, student = Fals
     
     norm = []
 
-    fac = volume.shape[2] * geometries[0]['img_pixel'] * numpy.sqrt(2)
+    fac = volume.shape[2] * geometries[0].voxel * numpy.sqrt(2)
 
     print('PWLS-ing in progress...')
     sleep(0.5)
@@ -676,7 +676,7 @@ def L2_step(projections, volume, geometry):
     prj_weight = _astra_norm_(projections, volume, geometry, 'BP3D_CUDA')
       
     # Initialize ASTRA geometries:
-    vol_geom = io.astra_vol_geom(geometry, volume.shape)      
+    vol_geom = geometry.astra_volume_geom(volume.shape)      
 
     # Residual norm:    
     norm = 0
@@ -706,7 +706,7 @@ def L2_step(projections, volume, geometry):
         #block = array.ramp(block, 0, 5, mode = 'linear')
         #block = array.ramp(block, 2, 5, mode = 'linear')
         
-        block *= prj_weight
+        block *= prj_weight * 2
         
         # Project
         _backproject_block_add_(block, volume, proj_geom, vol_geom, 'BP3D_CUDA')    
@@ -725,7 +725,7 @@ def CPLS_step(projections, vol, vol_bar, vol_q, proj_p, geometry, lambda_tv):
     mode = settings['mode']
 
     # Sampling:
-    samp = geometry['proj_sample']
+    samp = geometry.det_sample
     
     shp = numpy.array(projections.shape)
     shp //= samp
@@ -751,7 +751,7 @@ def CPLS_step(projections, vol, vol_bar, vol_q, proj_p, geometry, lambda_tv):
         if len(index) == 0: break
 
         # Extract a block:
-        proj_geom = io.astra_proj_geom(geometry, projections.shape, index = index)    
+        proj_geom = geometry.astra_projection_geom(projections.shape, index = index)    
         
         # The block will contain the discrepancy eventually (that's why we need a copy):
         if (mode == 'sequential') & (block_number == 1):
@@ -935,7 +935,7 @@ def EM_step(projections, volume, geometry):
     prj_weight = _astra_norm_(projections, volume, geometry, 'BP3D_CUDA') * 2
       
     # Initialize ASTRA geometries:
-    vol_geom = io.astra_vol_geom(geometry, volume.shape)      
+    vol_geom = geometry.astra_volume_geom(volume.shape)      
     
     # Norm update:
     norm = 0
@@ -946,7 +946,7 @@ def EM_step(projections, volume, geometry):
     for ii in range(len(index)):
         
         # Extract a block:
-        proj_geom = io.astra_proj_geom(geometry, projections.shape, index = index[ii])    
+        proj_geom = geometry.astra_projection_geom(projections.shape, index = index[ii])    
         
         # Copy data to a block or simply pass a pointer to data itself if block is one.
         if (mode == 'sequential') & (block_number == 1):
@@ -1004,9 +1004,8 @@ def _forwardprojector_norm_(vol_shape, geometry):
     """
     # We assume that the longest possible ray equal to the diagonal of the volume:
     width = numpy.sqrt((numpy.array(vol_shape)**2).sum())
-    img_pixel = geometry['img_pixel']
     
-    return width * img_pixel
+    return width * geometry.voxel
 
 def _backprojector_norm_(vol_shape, geometry):
     """
@@ -1014,9 +1013,8 @@ def _backprojector_norm_(vol_shape, geometry):
     """
     # We assume that the longest possible ray equal to the diagonal of the volume:
     width = numpy.sqrt((numpy.array(vol_shape)**2).sum())
-    img_pixel = geometry['img_pixel']
     
-    return 1 / (img_pixel * width)
+    return 1 / (geometry.voxel * width)
         
 def _blocker_(projections, geometry):
     """
@@ -1029,7 +1027,7 @@ def _blocker_(projections, geometry):
     proj_geoms = []
     
     # Subsample projections:
-    samp = geometry['proj_sample']
+    samp = geometry.det_sample
     
     if sum(samp) > 3:
         proj = projections[::samp[0], ::samp[1], ::samp[2]]
@@ -1043,7 +1041,7 @@ def _blocker_(projections, geometry):
         block = _contiguous_check_(block)
             
         blocks.append(block)
-        proj_geoms.append(io.astra_proj_geom(geometry, proj.shape, index = index[ii]))
+        proj_geoms.append(geometry.astra_projection_geom(proj.shape, index = index[ii]))
     
     return blocks, proj_geoms
 
@@ -1057,10 +1055,10 @@ def _astra_norm_(projections, volume, geometry, algorithm):
     
     # This normalization is not done at ASTRA level at the moment:
     if algorithm == 'BP3D_CUDA':
-        sam = geometry['proj_sample']
-        anisotropy = geometry['vol_sample']
+        sam = geometry.det_sample
+        anisotropy = geometry.vol_sample
         
-        pix = (geometry['img_pixel']**4 * anisotropy[0] * anisotropy[1] * anisotropy[2] * anisotropy[2])
+        pix = (geometry.voxel[1]**4 * anisotropy[0] * anisotropy[1] * anisotropy[2] * anisotropy[2])
         return n / (projections.shape[1] // sam[1] * pix * max(volume.shape)) 
     
     else:

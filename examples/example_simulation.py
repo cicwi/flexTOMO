@@ -6,7 +6,7 @@ Effect of subset version of SIRT.
 """
 #%% Imports
 
-from flexdata import io
+from flexdata import geometry
 from flexdata import display
 
 from flextomo import project
@@ -17,20 +17,20 @@ import numpy
 #%% Create volume and forward project:
     
 # Initialize images:    
-proj = numpy.zeros([1, 361, 512], dtype = 'float32')
+proj = numpy.zeros([1, 128, 512], dtype = 'float32')
 
 # Define a simple projection geometry:
-geometry = io.init_geometry(src2obj = 100, det2obj = 100, det_pixel = 0.01, theta_range = [0, 360], geom_type = 'simple')
+geom = geometry.basic(src2obj = 100, det2obj = 100, det_pixel = 0.01, ang_range = [0, 360])
 
-print('Volume width is:', 512 * geometry['img_pixel'])
+print('Volume width is:', 512 * geom.voxel)
 
 # Create phantom and project into proj:
-vol = phantom.abstract_nudes([1, 512, 512], geometry, complexity = 10)
+vol = phantom.abstract_nudes([1, 512, 512], geom, complexity = 10)
 
 display.slice(vol, title = 'Phantom')
 
 # Forward project:
-project.forwardproject(proj, vol, geometry)
+project.forwardproject(proj, vol, geom)
 display.slice(proj, title = 'Sinogram')
 
 #%% Unfiltered back-project
@@ -40,7 +40,7 @@ vol_rec = numpy.zeros_like(vol)
 
 # Backproject:
 project.settings['block_number'] = 1
-project.backproject(proj, vol_rec, geometry)
+project.backproject(proj, vol_rec, geom)
 
 display.slice(vol_rec, title = 'Backprojection')
 
@@ -50,7 +50,7 @@ display.slice(vol_rec, title = 'Backprojection')
 vol_rec = numpy.zeros_like(vol)
 
 # Use FDK:
-project.FDK(proj, vol_rec, geometry)
+project.FDK(proj, vol_rec, geom)
 
 display.slice(vol_rec, title = 'FDK')
 
@@ -58,7 +58,7 @@ display.slice(vol_rec, title = 'FDK')
 
 vol_rec = numpy.zeros_like(vol)
 
-project.EM(proj, vol_rec, geometry, iterations = 10)
+project.EM(proj, vol_rec, geom, iterations = 10)
 
 display.slice(vol_rec, title = 'EM')
 
@@ -66,7 +66,7 @@ display.slice(vol_rec, title = 'EM')
 
 vol = numpy.zeros([1, 512, 512], dtype = 'float32')
 
-project.SIRT(proj, vol, geometry, iterations = 10)
+project.SIRT(proj, vol, geom, iterations = 10)
 
 display.slice(vol, title = 'SIRT')
 
@@ -74,7 +74,7 @@ display.slice(vol, title = 'SIRT')
 
 vol = numpy.zeros([1, 512, 512], dtype = 'float32')
 
-project.FISTA(proj, vol, geometry, iterations = 10)
+project.FISTA(proj, vol, geom, iterations = 10)
 
 display.slice(vol, title = 'FISTA')
 
@@ -86,7 +86,8 @@ project.settings['mode'] = 'equidistant'
 
 vol = numpy.zeros([1, 512, 512], dtype = 'float32')
 
-project.SIRT(proj, vol, geometry, iterations = 10)
+project.SIRT(proj, vol, geom, iterations = 10)
 
 display.slice(vol, title = 'SIRT')
+
 

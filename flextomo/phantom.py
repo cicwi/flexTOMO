@@ -13,18 +13,6 @@ import numpy
 import numpy.random
 from scipy.ndimage import interpolation
 
-def _coords_(shape, geometry, offset = [0.,0.,0.]):
-    """
-    Coordinate space in mm.
-    """
-    voxel = geometry['img_pixel']
-    
-    xx = (numpy.arange(0, shape[0]) - shape[0] / 2) * voxel - offset[0] 
-    yy = (numpy.arange(0, shape[1]) - shape[1] / 2) * voxel - offset[1]
-    zz = (numpy.arange(0, shape[2]) - shape[2] / 2) * voxel - offset[2]
-    
-    return xx, yy, zz
-
 def abstract_nudes(shape, geometry, complexity = 10):
     """
     Creates works of abstract art.
@@ -77,7 +65,7 @@ def random_spheroids(shape, geometry, number = 3, overlap = 'xor', rotation = Tr
                 
 def sphere(shape, geometry, r, offset = [0., 0., 0.]):
     """
-    Make sphere. Radius is in units (geometry['unit'])
+    Make sphere. Radius is in units (geometry.parameters['unit'])
     """
     return spheroid(shape, geometry, r, r, r, offset)
     
@@ -86,17 +74,17 @@ def spheroid(shape, geometry, r1, r2, r3, offset = [0., 0., 0.]):
     Make a spheroid. 
     """
     # Get the coordinates in mm:
-    xx,yy,zz = _coords_(shape, geometry, offset)
+    xx,yy,zz = geometry.volume_xyz(shape, offset)
     
     # Volume init: 
     return numpy.array((((xx[:, None, None]*r2*r3)**2 + (yy[None, :, None]*r1*r3)**2 + (zz[None, None, :]*r1*r2)**2) < (r1*r2*r3)**2), dtype = 'float32') 
     
 def cuboid(shape, geometry, a, b, c, offset = [0., 0., 0.]):
     """
-    Make a cuboid. Dimensions are in units (geometry['unit'])
+    Make a cuboid. Dimensions are in units (geometry.parameters['unit'])
     """
     # Get the coordinates in mm:
-    xx,yy,zz = _coords_(shape, geometry, offset)
+    xx,yy,zz = geometry.volume_xyz(shape, offset)
      
     return  numpy.array((abs(xx[:, None, None]) < a / 2) * (abs(yy[None, :, None]) < b / 2) * (abs(zz[None, None, :]) < c / 2), dtype = 'float32')  
     
@@ -109,7 +97,7 @@ def cylinder(shape, geometry, r, h, offset = [0., 0., 0.]):
     volume = numpy.zeros(shape, dtype = 'float32')
     
     # Get the coordinates in mm:
-    xx,yy,zz = _coords_(shape, geometry, offset)
+    xx,yy,zz = geometry.volume_xyz(shape, offset)
      
     volume = numpy.array(((zz[None, None, :])**2 + (yy[None, :, None])**2) < r ** 2, dtype = 'float32')  
     
@@ -123,7 +111,7 @@ def checkers(shape, geometry, frequency, offset = [0., 0., 0.]):
     volume = numpy.zeros(shape, dtype = 'float32')
     
     # Get the coordinates in mm:
-    xx,yy,zz = _coords_(shape, geometry, offset)
+    xx,yy,zz = geometry.volume_xyz(shape, offset)
     
     volume_ = numpy.zeros(shape, dtype='bool')
     
@@ -149,14 +137,14 @@ def _random_offset_(shape, geometry, area_shrink = 1):
     """
     Generate random coordinates. Use area_shrink to shrink the area.
     """
-    ranges = (numpy.array(shape) - 1) * geometry['img_pixel'] * area_shrink 
+    ranges = (numpy.array(shape) - 1) * geometry.voxel * area_shrink 
     return ranges * (numpy.random.rand(3) - 0.5)
 
 def _random_size_(shape, geometry, area_shrink = 1):
     """
     Generate random sizes. It never produces zeros.
     """
-    ranges = (numpy.array(shape) - 1) * geometry['img_pixel'] * area_shrink / 2
+    ranges = (numpy.array(shape) - 1) * geometry.voxel * area_shrink / 2
     res = ranges * (numpy.random.rand(3))
     res = (res * 4 / 5 + res.mean() / 5)
     
