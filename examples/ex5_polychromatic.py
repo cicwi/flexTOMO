@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Simulate spectral X-ray source, integrating detector (Si scintillator) with Poisson noise.
+Simulate a polychromatic X-ray source, integrating detector (Si scintillator) with Poisson noise.
 """
 
 #%% Imports

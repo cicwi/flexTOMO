@@ -13,21 +13,20 @@ import numpy
 
 #%% Read data:
     
-path = 'D:\data\skull'
+path = '/ufs/ciacc/flexbox/good/'
 
 dark = data.read_stack(path, 'di00', sample = 2)
 flat = data.read_stack(path, 'io00', sample = 2)    
-proj = data.read_stack(path, 'scan_', sample = 2, skip = 1, dtype = 'float32', memmap = 'D:\data\scratch\scratch.mem')
+proj = data.read_stack(path, 'scan_', sample = 2, skip = 1, dtype = 'float32', memmap = '/export/scratch3/kostenko/flexbox_scratch/scratch.mem')
 
-geom = data.read_flexraylog(path)   
+geom = data.read_flexraylog(path, sample = 2)   
  
-#%% Prepro (use inmplicit operations):
+#%% Prepro (use implicit operations):
     
 proj -= dark 
-proj /= (flat - dark).mean(0)
+proj /= (flat - dark).mean(1)[:, None, :]
 numpy.log(proj, out = proj)
 proj *= -1
-proj = data.flipdim(proj)    
 
 display.slice(proj, title = 'Sinogram. What else?')
 

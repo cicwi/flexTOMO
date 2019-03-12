@@ -17,13 +17,13 @@ import numpy
 #%% Create volume and forward project into two orhogonal scans:
     
 # Initialize images:    
-proj_a = numpy.zeros([128, 16, 128], dtype = 'float32')
-proj_b = numpy.zeros([128, 16, 128], dtype = 'float32')
+proj_a = numpy.zeros([128, 32, 128], dtype = 'float32')
+proj_b = numpy.zeros([128, 32, 128], dtype = 'float32')
 
 # Define a simple projection geometry:
 geom_a = geometry.circular(src2obj = 100, det2obj = 100, det_pixel = 0.01, ang_range = [0, 360])
 geom_b = geom_a.copy()
-geom_b.parameters['axs_pitch'] = 90
+geom_b['axs_roll'] = 90
 
 # Create phantom and project into proj:
 vol = phantom.random_spheroids([128, 128, 128], geom_a, number = 10)

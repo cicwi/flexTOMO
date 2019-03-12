@@ -17,34 +17,36 @@
   
 
   
+  <script type="text/javascript" src="_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script type="text/javascript" src="_static/jquery.js"></script>
+        <script type="text/javascript" src="_static/underscore.js"></script>
+        <script type="text/javascript" src="_static/doctools.js"></script>
+        <script type="text/javascript" src="_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
 
-  
-  
     
 
   
-
   <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="flextomo" href="modules.html" />
     <link rel="prev" title="Welcome to the documentation of flextomo!" href="index.html" /> 
-
-  
-  <script src="_static/js/modernizr.min.js"></script>
-
 </head>
 
 <body class="wy-body-for-nav">
 
    
   <div class="wy-grid-for-nav">
-
     
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
-        <div class="wy-side-nav-search">
+        <div class="wy-side-nav-search" >
           
 
           
@@ -159,14 +161,14 @@
            <div itemprop="articleBody">
             
   <div class="section" id="flextomo">
-<span id="flextomo"></span><h1>flextomo<a class="headerlink" href="#flextomo" title="Permalink to this headline">¶</a></h1>
+<h1>flextomo<a class="headerlink" href="#flextomo" title="Permalink to this headline">¶</a></h1>
 <p>ASTRA-based cone beam tomography reconstructions.</p>
 <ul class="simple">
 <li>Free software: GNU General Public License v3</li>
 <li>Documentation: [https://teascavenger.github.io/flextomo]</li>
 </ul>
 <div class="section" id="readiness">
-<span id="readiness"></span><h2>Readiness<a class="headerlink" href="#readiness" title="Permalink to this headline">¶</a></h2>
+<h2>Readiness<a class="headerlink" href="#readiness" title="Permalink to this headline">¶</a></h2>
 <p>The author of this package is in the process of setting up this
 package for optimal usability. The following has already been completed:</p>
 <ul>
@@ -202,12 +204,12 @@ with the “source” set to “master branch /docs folder”.</li>
 installing the package have been added to the
 <code class="docutils literal notranslate"><span class="pre">Makefile</span></code>. Specifically, replace</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">conda_package</span><span class="p">:</span> <span class="n">install_dev</span>
-  <span class="n">conda</span> <span class="n">build</span> <span class="n">conda</span><span class="o">/</span>
+	<span class="n">conda</span> <span class="n">build</span> <span class="n">conda</span><span class="o">/</span>
 </pre></div>
 </div>
 <p>by</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">conda_package</span><span class="p">:</span> <span class="n">install_dev</span>
-  <span class="n">conda</span> <span class="n">build</span> <span class="n">conda</span><span class="o">/</span> <span class="o">-</span><span class="n">c</span> <span class="n">some</span><span class="o">-</span><span class="n">channel</span> <span class="o">-</span><span class="n">c</span> <span class="n">some</span><span class="o">-</span><span class="n">other</span><span class="o">-</span><span class="n">channel</span>
+	<span class="n">conda</span> <span class="n">build</span> <span class="n">conda</span><span class="o">/</span> <span class="o">-</span><span class="n">c</span> <span class="n">some</span><span class="o">-</span><span class="n">channel</span> <span class="o">-</span><span class="n">c</span> <span class="n">some</span><span class="o">-</span><span class="n">other</span><span class="o">-</span><span class="n">channel</span>
 </pre></div>
 </div>
 </li>
@@ -222,20 +224,20 @@ installing the package have been added to the
 </ul>
 </div>
 <div class="section" id="getting-started">
-<span id="getting-started"></span><h2>Getting Started<a class="headerlink" href="#getting-started" title="Permalink to this headline">¶</a></h2>
+<h2>Getting Started<a class="headerlink" href="#getting-started" title="Permalink to this headline">¶</a></h2>
 <p>It takes a few steps to setup flextomo on your
 machine. We recommend installing
 <a class="reference external" href="https://www.anaconda.com/download/">Anaconda package manager</a> for
 Python 3.</p>
 <div class="section" id="installing-with-conda">
-<span id="installing-with-conda"></span><h3>Installing with conda<a class="headerlink" href="#installing-with-conda" title="Permalink to this headline">¶</a></h3>
+<h3>Installing with conda<a class="headerlink" href="#installing-with-conda" title="Permalink to this headline">¶</a></h3>
 <p>Simply install with:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">conda</span> <span class="n">install</span> <span class="o">-</span><span class="n">c</span> <span class="n">cicwi</span> <span class="n">flextomo</span>
 </pre></div>
 </div>
 </div>
 <div class="section" id="installing-from-source">
-<span id="installing-from-source"></span><h3>Installing from source<a class="headerlink" href="#installing-from-source" title="Permalink to this headline">¶</a></h3>
+<h3>Installing from source<a class="headerlink" href="#installing-from-source" title="Permalink to this headline">¶</a></h3>
 <p>To install flextomo, simply clone this GitHub
 project. Go to the cloned directory and run PIP installer:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">git</span> <span class="n">clone</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">github</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">teascavenger</span><span class="o">/</span><span class="n">flextomo</span><span class="o">.</span><span class="n">git</span>
@@ -245,26 +247,26 @@ project. Go to the cloned directory and run PIP installer:</p>
 </div>
 </div>
 <div class="section" id="running-the-examples">
-<span id="running-the-examples"></span><h3>Running the examples<a class="headerlink" href="#running-the-examples" title="Permalink to this headline">¶</a></h3>
+<h3>Running the examples<a class="headerlink" href="#running-the-examples" title="Permalink to this headline">¶</a></h3>
 <p>To learn more about the functionality of the package check out our
 examples folder.</p>
 </div>
 </div>
 <div class="section" id="authors-and-contributors">
-<span id="authors-and-contributors"></span><h2>Authors and contributors<a class="headerlink" href="#authors-and-contributors" title="Permalink to this headline">¶</a></h2>
+<h2>Authors and contributors<a class="headerlink" href="#authors-and-contributors" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li>**Alex Kostenko ** - <em>Initial work</em></li>
 </ul>
 <p>See also the list of <a class="reference external" href="https://github.com/teascavenger/flextomo/contributors">contributors</a> who participated in this project.</p>
 </div>
 <div class="section" id="how-to-contribute">
-<span id="how-to-contribute"></span><h2>How to contribute<a class="headerlink" href="#how-to-contribute" title="Permalink to this headline">¶</a></h2>
+<h2>How to contribute<a class="headerlink" href="#how-to-contribute" title="Permalink to this headline">¶</a></h2>
 <p>Contributions are always welcome. Please submit pull requests against the <code class="docutils literal notranslate"><span class="pre">master</span></code> branch.</p>
 <p>If you have any issues, questions, or remarks, then please open an issue on GitHub.</p>
 </div>
 <div class="section" id="license">
-<span id="license"></span><h2>License<a class="headerlink" href="#license" title="Permalink to this headline">¶</a></h2>
-<p>This project is licensed under the GNU General Public License v3 - see the <a class="reference external" href="LICENSE.md">LICENSE.md</a> file for details.</p>
+<h2>License<a class="headerlink" href="#license" title="Permalink to this headline">¶</a></h2>
+<p>This project is licensed under the GNU General Public License v3 - see the <a class="reference external" href="LICENSE">LICENSE.md</a> file for details.</p>
 </div>
 </div>
 
@@ -279,7 +281,7 @@ examples folder.</p>
         <a href="modules.html" class="btn btn-neutral float-right" title="flextomo" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
-        <a href="index.html" class="btn btn-neutral" title="Welcome to the documentation of flextomo!" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+        <a href="index.html" class="btn btn-neutral float-left" title="Welcome to the documentation of flextomo!" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   
@@ -305,35 +307,16 @@ examples folder.</p>
   
 
 
-  
-
-    
-    
-      <script type="text/javascript">
-          var DOCUMENTATION_OPTIONS = {
-              URL_ROOT:'./',
-              VERSION:'',
-              LANGUAGE:'en',
-              COLLAPSE_INDEX:false,
-              FILE_SUFFIX:'.html',
-              HAS_SOURCE:  true,
-              SOURCELINK_SUFFIX: '.txt'
-          };
-      </script>
-        <script type="text/javascript" src="_static/jquery.js"></script>
-        <script type="text/javascript" src="_static/underscore.js"></script>
-        <script type="text/javascript" src="_static/doctools.js"></script>
-    
-
-  
-
-  <script type="text/javascript" src="_static/js/theme.js"></script>
-
   <script type="text/javascript">
       jQuery(function () {
           SphinxRtdTheme.Navigation.enable(true);
       });
-  </script> 
+  </script>
+
+  
+  
+    
+   
 
 </body>
 </html>

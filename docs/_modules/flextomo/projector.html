@@ -1,0 +1,1110 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>flextomo.projector &mdash; flextomo  documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> flextomo
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../readme.html">flextomo</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../modules.html">flextomo</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html">Changelog</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">flextomo</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+        
+      <li>flextomo.projector</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for flextomo.projector</h1><div class="highlight"><pre>
+<span></span><span class="ch">#!/usr/bin/env python3</span>
+<span class="c1"># -*- coding: utf-8 -*-</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Created on Oct 2018</span>
+<span class="sd">@author: Alex Kostenko</span>
+
+<span class="sd">This module contains: building blocks for reconstruction algorithms:</span>
+<span class="sd">    back- and forward-projection operators, gradient descent updates </span>
+<span class="sd">     </span>
+<span class="sd">All of the functions support large datasets implemented using numpy.memmap arrays</span>
+<span class="sd">and geometry classes defined in flexData.geometry.</span>
+
+<span class="sd">All projectors are based on ASTRA and are GPU-accelerated (CUDA).</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="c1"># &gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt; Imports &gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span>                <span class="c1"># arithmetics, arrays</span>
+<span class="kn">import</span> <span class="nn">sys</span>                  <span class="c1"># error info</span>
+<span class="kn">import</span> <span class="nn">traceback</span>            <span class="c1"># errors errors</span>
+<span class="kn">from</span> <span class="nn">scipy</span> <span class="k">import</span> <span class="n">optimize</span>  <span class="c1"># minimizer used in Students-T</span>
+<span class="kn">from</span> <span class="nn">scipy</span> <span class="k">import</span> <span class="n">special</span>  
+<span class="kn">from</span> <span class="nn">time</span> <span class="k">import</span> <span class="n">sleep</span>      <span class="c1"># Make a small pause to give time for the progress bar</span>
+<span class="kn">from</span> <span class="nn">tqdm</span> <span class="k">import</span> <span class="n">tqdm</span>       <span class="c1"># progress bar</span>
+
+<span class="kn">import</span> <span class="nn">astra</span>                       <span class="c1"># The mother of tomography</span>
+<span class="kn">import</span> <span class="nn">astra.experimental</span> <span class="k">as</span> <span class="nn">asex</span>  <span class="c1"># The ugly offspring </span>
+
+<span class="kn">from</span> <span class="nn">flexdata</span> <span class="k">import</span> <span class="n">display</span><span class="c1"># show previews</span>
+<span class="kn">from</span> <span class="nn">flexdata</span> <span class="k">import</span> <span class="n">data</span>
+<span class="kn">from</span> <span class="nn">flexdata.data</span> <span class="k">import</span> <span class="n">logger</span>
+
+<span class="c1"># &gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt; Global settings &gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;</span>
+<div class="viewcode-block" id="settings"><a class="viewcode-back" href="../../flextomo.html#flextomo.projector.settings">[docs]</a><span class="k">class</span> <span class="nc">settings</span><span class="p">:</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Settings container used by projectors and reconstruction algorithms.</span>
+<span class="sd">    Attributes:</span>
+<span class="sd">        progress_bar    : show a progress bar     </span>
+<span class="sd">        preview         : show previews</span>
+<span class="sd">        update_residual : update the cost function</span>
+<span class="sd">    </span>
+<span class="sd">        subsets         : Number of projection subsets</span>
+<span class="sd">        sorting         : Sorting of projections: &#39;sequential&#39; or &#39;equidistant&#39;</span>
+<span class="sd">        </span>
+<span class="sd">        poisson         : Weight pixels according to a Poisson statistics (only backprojection)</span>
+<span class="sd">        student         : Use Students-T norm for regularization</span>
+<span class="sd">        pixel_mask      : (scalar or 3d array) Mask applied to projections. If 3d, any dimension can be 0</span>
+<span class="sd">        voxel_mask      : (scalar or 3d array) Mask applied to volume during forward projection. If 3d, any dimension can be 0</span>
+<span class="sd">        fourier_filter  : (scalar or 2d array) Fourier filter applied to every projection (CTF)</span>
+<span class="sd">        bounds          : Lower and upper bounds for the reconstruction values</span>
+<span class="sd">        </span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="n">progress_bar</span> <span class="o">=</span> <span class="kc">True</span>      
+    <span class="n">preview</span> <span class="o">=</span> <span class="kc">False</span>          
+    <span class="n">update_residual</span> <span class="o">=</span> <span class="kc">False</span>  
+
+    <span class="n">subsets</span> <span class="o">=</span> <span class="mi">1</span>              
+    <span class="n">sorting</span> <span class="o">=</span> <span class="s1">&#39;sequential&#39;</span>   
+    
+    <span class="n">poisson</span> <span class="o">=</span> <span class="kc">False</span>   
+    <span class="n">student</span> <span class="o">=</span> <span class="kc">False</span>       
+    <span class="n">bounds</span> <span class="o">=</span> <span class="kc">None</span>              
+    <span class="n">pixel_mask</span> <span class="o">=</span> <span class="kc">None</span>           
+    <span class="n">voxel_mask</span> <span class="o">=</span> <span class="kc">None</span>        
+    <span class="n">fourier_filter</span> <span class="o">=</span> <span class="kc">None</span></div>
+   
+<span class="c1"># &gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt; HIGH LEVEL ALGORITHMS &gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;</span>
+<div class="viewcode-block" id="init_volume"><a class="viewcode-back" href="../../flextomo.html#flextomo.projector.init_volume">[docs]</a><span class="k">def</span> <span class="nf">init_volume</span><span class="p">(</span><span class="n">projections</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Initialize a standard-size volume array.</span>
+<span class="sd">    &quot;&quot;&quot;</span>          
+    <span class="n">sz</span> <span class="o">=</span> <span class="n">projections</span><span class="o">.</span><span class="n">shape</span>
+    <span class="k">return</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">sz</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">sz</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">sz</span><span class="p">[</span><span class="mi">2</span><span class="p">]),</span> <span class="n">dtype</span> <span class="o">=</span> <span class="s1">&#39;float32&#39;</span><span class="p">)</span>    </div>
+    
+<div class="viewcode-block" id="FDK"><a class="viewcode-back" href="../../flextomo.html#flextomo.projector.FDK">[docs]</a><span class="k">def</span> <span class="nf">FDK</span><span class="p">(</span> <span class="n">projections</span><span class="p">,</span> <span class="n">volume</span><span class="p">,</span> <span class="n">geometry</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Feldkamp, Davis and Kress cone beam reconstruction.</span>
+<span class="sd">    Args:</span>
+<span class="sd">        projections : input numpy.array (dtype = float32) with the following dimensions: [vrt, rot, hrz]</span>
+<span class="sd">        volume      : output numpy.array (dtype = float32) with the following dimensions: [vrt, mag, hrz]</span>
+<span class="sd">        geometry    : geometry description - one of threee types: &#39;simple&#39;, &#39;static_offsets&#39;, &#39;linear_offsets&#39;</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">backproject</span><span class="p">(</span><span class="n">projections</span><span class="p">,</span> <span class="n">volume</span><span class="p">,</span> <span class="n">geometry</span><span class="p">,</span> <span class="n">filtered</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span></div>
+   
+<div class="viewcode-block" id="SIRT"><a class="viewcode-back" href="../../flextomo.html#flextomo.projector.SIRT">[docs]</a><span class="k">def</span> <span class="nf">SIRT</span><span class="p">(</span> <span class="n">projections</span><span class="p">,</span> <span class="n">volume</span><span class="p">,</span> <span class="n">geometry</span><span class="p">,</span> <span class="n">iterations</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Simultaneous Iterative Reconstruction Technique.</span>
+<span class="sd">    &quot;&quot;&quot;</span> 
+    <span class="n">ss</span> <span class="o">=</span> <span class="n">settings</span>
+    <span class="n">preview</span> <span class="o">=</span> <span class="n">ss</span><span class="o">.</span><span class="n">preview</span>    
+    <span class="n">bounds</span> <span class="o">=</span> <span class="n">ss</span><span class="o">.</span><span class="n">bounds</span>
+    
+    <span class="n">logger</span><span class="o">.</span><span class="n">print</span><span class="p">(</span><span class="s1">&#39;Feeling SIRTy...&#39;</span><span class="p">)</span>
+    
+    <span class="c1"># Residual norms:    </span>
+    <span class="n">rnorms</span> <span class="o">=</span> <span class="p">[]</span>
+    
+    <span class="c1"># Progress bar:</span>
+    <span class="n">pbar</span> <span class="o">=</span> <span class="n">_pbar_start_</span><span class="p">(</span><span class="n">iterations</span><span class="p">,</span> <span class="s1">&#39;iterations&#39;</span><span class="p">)</span>
+        
+    <span class="k">for</span> <span class="n">ii</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">iterations</span><span class="p">):</span>
+        
+        <span class="c1"># L2 update:</span>
+        <span class="n">norm</span> <span class="o">=</span> <span class="n">l2_update</span><span class="p">(</span><span class="n">projections</span><span class="p">,</span> <span class="n">volume</span><span class="p">,</span> <span class="n">geometry</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="n">norm</span><span class="p">:</span>
+            <span class="n">rnorms</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">norm</span><span class="p">)</span>
+        
+        <span class="c1"># Apply bounds</span>
+        <span class="k">if</span> <span class="n">bounds</span><span class="p">:</span>
+            <span class="n">numpy</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">volume</span><span class="p">,</span> <span class="n">a_min</span> <span class="o">=</span> <span class="n">bounds</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">a_max</span> <span class="o">=</span> <span class="n">bounds</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">out</span> <span class="o">=</span> <span class="n">volume</span><span class="p">)</span>    
+       
+        <span class="k">if</span> <span class="n">preview</span><span class="p">:</span>
+            <span class="n">display</span><span class="o">.</span><span class="n">slice</span><span class="p">(</span><span class="n">volume</span><span class="p">,</span> <span class="n">dim</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">title</span> <span class="o">=</span> <span class="s1">&#39;Preview&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">_pbar_update_</span><span class="p">(</span><span class="n">pbar</span><span class="p">)</span>
+
+    <span class="c1"># Stop progress bar    </span>
+    <span class="n">_pbar_close_</span><span class="p">(</span><span class="n">pbar</span><span class="p">)</span>
+                     
+    <span class="k">if</span> <span class="n">rnorms</span><span class="p">:</span>   
+         <span class="n">display</span><span class="o">.</span><span class="n">plot2d</span><span class="p">(</span><span class="n">rnorms</span><span class="p">,</span> <span class="n">semilogy</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="n">title</span> <span class="o">=</span> <span class="s1">&#39;Resudual L2&#39;</span><span class="p">)</span>   </div>
+         
+<div class="viewcode-block" id="PWLS"><a class="viewcode-back" href="../../flextomo.html#flextomo.projector.PWLS">[docs]</a><span class="k">def</span> <span class="nf">PWLS</span><span class="p">(</span><span class="n">projections</span><span class="p">,</span> <span class="n">volume</span><span class="p">,</span> <span class="n">geometry</span><span class="p">,</span> <span class="n">iterations</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Simple implementation of the Penalized Weighted Least Squeares. </span>
+<span class="sd">    Gives better results when photon starvation and metal artifacts are present in small parts of the volume.</span>
+<span class="sd">    Needs more memory than SIRT!</span>
+<span class="sd">    &quot;&quot;&quot;</span> 
+    <span class="n">ss</span> <span class="o">=</span> <span class="n">settings</span>
+    <span class="n">preview</span> <span class="o">=</span> <span class="n">ss</span><span class="o">.</span><span class="n">preview</span>    
+    <span class="n">bounds</span> <span class="o">=</span> <span class="n">ss</span><span class="o">.</span><span class="n">bounds</span>
+    
+    <span class="n">logger</span><span class="o">.</span><span class="n">print</span><span class="p">(</span><span class="s1">&#39;PWLS-PWLS-PWLS-PWLS...&#39;</span><span class="p">)</span>
+    
+    <span class="c1"># Residual norms:    </span>
+    <span class="n">rnorms</span> <span class="o">=</span> <span class="p">[]</span>
+    
+    <span class="c1"># Progress bar:</span>
+    <span class="n">pbar</span> <span class="o">=</span> <span class="n">_pbar_start_</span><span class="p">(</span><span class="n">iterations</span><span class="p">,</span> <span class="s1">&#39;iterations&#39;</span><span class="p">)</span>
+        
+    <span class="k">for</span> <span class="n">ii</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">iterations</span><span class="p">):</span>
+        
+        <span class="c1"># L2 update:</span>
+        <span class="n">norm</span> <span class="o">=</span> <span class="n">pwls_update</span><span class="p">(</span><span class="n">projections</span><span class="p">,</span> <span class="n">volume</span><span class="p">,</span> <span class="n">geometry</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="n">norm</span><span class="p">:</span>
+            <span class="n">rnorms</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">norm</span><span class="p">)</span>
+        
+        <span class="c1"># Apply bounds</span>
+        <span class="k">if</span> <span class="n">bounds</span><span class="p">:</span>
+            <span class="n">numpy</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">volume</span><span class="p">,</span> <span class="n">a_min</span> <span class="o">=</span> <span class="n">bounds</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">a_max</span> <span class="o">=</span> <span class="n">bounds</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">out</span> <span class="o">=</span> <span class="n">volume</span><span class="p">)</span>    
+       
+        <span class="k">if</span> <span class="n">preview</span><span class="p">:</span>
+            <span class="n">display</span><span class="o">.</span><span class="n">slice</span><span class="p">(</span><span class="n">volume</span><span class="p">,</span> <span class="n">dim</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">title</span> <span class="o">=</span> <span class="s1">&#39;Preview&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">_pbar_update_</span><span class="p">(</span><span class="n">pbar</span><span class="p">)</span>
+
+    <span class="c1"># Stop progress bar    </span>
+    <span class="n">_pbar_close_</span><span class="p">(</span><span class="n">pbar</span><span class="p">)</span>
+                     
+    <span class="k">if</span> <span class="n">rnorms</span><span class="p">:</span>   
+         <span class="n">display</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">rnorms</span><span class="p">,</span> <span class="n">semilogy</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="n">title</span> <span class="o">=</span> <span class="s1">&#39;Resudual L2&#39;</span><span class="p">)</span> </div>
+         
+<div class="viewcode-block" id="FISTA"><a class="viewcode-back" href="../../flextomo.html#flextomo.projector.FISTA">[docs]</a><span class="k">def</span> <span class="nf">FISTA</span><span class="p">(</span> <span class="n">projections</span><span class="p">,</span> <span class="n">volume</span><span class="p">,</span> <span class="n">geometry</span><span class="p">,</span> <span class="n">iterations</span><span class="p">,</span> <span class="n">lmbda</span> <span class="o">=</span> <span class="mi">0</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    FISTA reconstruction. Right now there is no TV minimization substep here!</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="n">ss</span> <span class="o">=</span> <span class="n">settings</span>
+    <span class="n">preview</span> <span class="o">=</span> <span class="n">ss</span><span class="o">.</span><span class="n">preview</span>    
+    <span class="n">bounds</span> <span class="o">=</span> <span class="n">ss</span><span class="o">.</span><span class="n">bounds</span>
+        
+    <span class="c1"># Residual norms:    </span>
+    <span class="n">rnorms</span> <span class="o">=</span> <span class="p">[]</span>
+    
+    <span class="c1"># Various variables:</span>
+    <span class="n">t</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="n">volume_t</span> <span class="o">=</span> <span class="n">volume</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="n">volume_old</span> <span class="o">=</span> <span class="n">volume</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    
+    <span class="c1"># TV residual:</span>
+    <span class="n">sz</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">volume</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+    <span class="n">sz</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+    <span class="n">volume_tv</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">sz</span><span class="p">,</span> <span class="n">dtype</span> <span class="o">=</span> <span class="s1">&#39;float32&#39;</span><span class="p">)</span>
+    
+    <span class="n">logger</span><span class="o">.</span><span class="n">print</span><span class="p">(</span><span class="s1">&#39;FISTING started...&#39;</span><span class="p">)</span>
+    
+    <span class="c1"># Progress bar:</span>
+    <span class="n">pbar</span> <span class="o">=</span> <span class="n">_pbar_start_</span><span class="p">(</span><span class="n">iterations</span><span class="p">,</span> <span class="s1">&#39;iterations&#39;</span><span class="p">)</span>
+    
+    <span class="k">for</span> <span class="n">ii</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">iterations</span><span class="p">):</span>
+        
+        <span class="c1"># L2 update:</span>
+        <span class="n">norm</span> <span class="o">=</span> <span class="n">fista_update</span><span class="p">(</span><span class="n">projections</span><span class="p">,</span> <span class="n">volume</span><span class="p">,</span> <span class="n">volume_old</span><span class="p">,</span> <span class="n">volume_t</span><span class="p">,</span> <span class="n">volume_tv</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">geometry</span><span class="p">,</span> <span class="n">lmbda</span> <span class="o">=</span> <span class="n">lmbda</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="n">norm</span><span class="p">:</span>
+            <span class="n">rnorms</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">norm</span><span class="p">)</span>
+        
+        <span class="c1"># Apply bounds:</span>
+        <span class="k">if</span> <span class="n">bounds</span><span class="p">:</span>
+            <span class="n">numpy</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">volume</span><span class="p">,</span> <span class="n">a_min</span> <span class="o">=</span> <span class="n">bounds</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">a_max</span> <span class="o">=</span> <span class="n">bounds</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">out</span> <span class="o">=</span> <span class="n">volume</span><span class="p">)</span>    
+         
+        <span class="c1"># Show preview or progress:    </span>
+        <span class="k">if</span> <span class="n">preview</span><span class="p">:</span>
+            <span class="n">display</span><span class="o">.</span><span class="n">slice</span><span class="p">(</span><span class="n">volume</span><span class="p">,</span> <span class="n">dim</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">title</span> <span class="o">=</span> <span class="s1">&#39;Preview&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">_pbar_update_</span><span class="p">(</span><span class="n">pbar</span><span class="p">)</span>
+
+    <span class="c1"># Stop progress bar    </span>
+    <span class="n">_pbar_close_</span><span class="p">(</span><span class="n">pbar</span><span class="p">)</span>
+            
+    <span class="k">if</span> <span class="n">rnorms</span><span class="p">:</span>   
+         <span class="n">display</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">rnorms</span><span class="p">,</span> <span class="n">semilogy</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="n">title</span> <span class="o">=</span> <span class="s1">&#39;Resudual norm&#39;</span><span class="p">)</span></div>
+   
+<div class="viewcode-block" id="EM"><a class="viewcode-back" href="../../flextomo.html#flextomo.projector.EM">[docs]</a><span class="k">def</span> <span class="nf">EM</span><span class="p">(</span> <span class="n">projections</span><span class="p">,</span> <span class="n">volume</span><span class="p">,</span> <span class="n">geometry</span><span class="p">,</span> <span class="n">iterations</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Expectation Maximization</span>
+<span class="sd">    &quot;&quot;&quot;</span> 
+    <span class="n">ss</span> <span class="o">=</span> <span class="n">settings</span>
+    <span class="n">preview</span> <span class="o">=</span> <span class="n">ss</span><span class="o">.</span><span class="n">preview</span>    
+    <span class="n">bounds</span> <span class="o">=</span> <span class="n">ss</span><span class="o">.</span><span class="n">bounds</span>
+    
+    <span class="c1"># Make sure that the volume is positive:</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">volume</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span><span class="o">|</span><span class="p">(</span><span class="n">volume</span><span class="o">.</span><span class="n">min</span><span class="p">()</span><span class="o">&lt;</span><span class="mi">0</span><span class="p">):</span> 
+        <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s1">&#39;Wrong initial guess. Make sure that initial guess for EM is positive.&#39;</span><span class="p">)</span>
+    
+    <span class="k">if</span> <span class="p">(</span><span class="n">projections</span><span class="o">.</span><span class="n">min</span><span class="p">()</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">):</span>    
+        <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s1">&#39;Wrong projection data. Make sure that projections have no negative values.&#39;</span><span class="p">)</span>
+    
+    <span class="n">logger</span><span class="o">.</span><span class="n">print</span><span class="p">(</span><span class="s1">&#39;Em Emm Emmmm...&#39;</span><span class="p">)</span>
+    
+    <span class="c1"># Residual norms:    </span>
+    <span class="n">rnorms</span> <span class="o">=</span> <span class="p">[]</span>
+    
+    <span class="c1"># Progress bar:</span>
+    <span class="n">pbar</span> <span class="o">=</span> <span class="n">_pbar_start_</span><span class="p">(</span><span class="n">iterations</span><span class="p">,</span> <span class="s1">&#39;iterations&#39;</span><span class="p">)</span>
+        
+    <span class="k">for</span> <span class="n">ii</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">iterations</span><span class="p">):</span>
+        
+        <span class="c1"># Update volume:</span>
+        <span class="n">norm</span> <span class="o">=</span> <span class="n">em_update</span><span class="p">(</span><span class="n">projections</span><span class="p">,</span> <span class="n">volume</span><span class="p">,</span> <span class="n">geometry</span><span class="p">)</span>
+        
+        <span class="c1"># Apply bounds</span>
+        <span class="k">if</span> <span class="n">bounds</span><span class="p">:</span>
+            <span class="n">numpy</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">volume</span><span class="p">,</span> <span class="n">a_min</span> <span class="o">=</span> <span class="n">bounds</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">a_max</span> <span class="o">=</span> <span class="n">bounds</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">out</span> <span class="o">=</span> <span class="n">volume</span><span class="p">)</span> 
+                               
+        <span class="k">if</span> <span class="n">norm</span><span class="p">:</span>
+            <span class="n">rnorms</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">norm</span><span class="p">)</span>
+            
+        <span class="k">if</span> <span class="n">preview</span><span class="p">:</span>
+            <span class="n">display</span><span class="o">.</span><span class="n">slice</span><span class="p">(</span><span class="n">volume</span><span class="p">,</span> <span class="n">dim</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">title</span> <span class="o">=</span> <span class="s1">&#39;Preview&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">_pbar_update_</span><span class="p">(</span><span class="n">pbar</span><span class="p">)</span>
+
+    <span class="c1"># Stop progress bar    </span>
+    <span class="n">_pbar_close_</span><span class="p">(</span><span class="n">pbar</span><span class="p">)</span>
+            
+    <span class="k">if</span> <span class="n">rnorms</span><span class="p">:</span>   
+         <span class="n">display</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">rnorms</span><span class="p">,</span> <span class="n">semilogy</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="n">title</span> <span class="o">=</span> <span class="s1">&#39;Resudual norm&#39;</span><span class="p">)</span> </div>
+         
+<span class="c1"># &gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt; Low level building blocks&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;    </span>
+<div class="viewcode-block" id="forwardproject"><a class="viewcode-back" href="../../flextomo.html#flextomo.projector.forwardproject">[docs]</a><span class="k">def</span> <span class="nf">forwardproject</span><span class="p">(</span><span class="n">projections</span><span class="p">,</span> <span class="n">volume</span><span class="p">,</span> <span class="n">geometry</span><span class="p">,</span> <span class="n">sign</span> <span class="o">=</span> <span class="mi">1</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Forwardproject using standard ASTRA functionality. </span>
+<span class="sd">    If projections array is numpy.memmap, projection is done in blocks to save RAM.</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">        projections : output numpy.array (dtype = float32) with the following dimensions: [vrt, rot, hrz]</span>
+<span class="sd">        volume      : input numpy.array (dtype = float32) with the following dimensions: [vrt, mag, hrz]</span>
+<span class="sd">        geometry    : geometry description - one of threee types: &#39;simple&#39;, &#39;static_offsets&#39;, &#39;linear_offsets&#39;</span>
+<span class="sd">        sign        : either +1 or -1 (add or subtract the data)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">subsets</span> <span class="o">=</span> <span class="n">settings</span><span class="o">.</span><span class="n">subsets</span>
+    
+    <span class="c1"># Non-memmap case is a single block:</span>
+    <span class="n">volume</span> <span class="o">=</span> <span class="n">_contiguous_check_</span><span class="p">(</span><span class="n">volume</span><span class="p">,</span> <span class="n">copy</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> 
+
+    <span class="c1"># Progress bar:</span>
+    <span class="n">pbar</span> <span class="o">=</span> <span class="n">_pbar_start_</span><span class="p">(</span><span class="n">subsets</span><span class="p">,</span> <span class="s1">&#39;subsets&#39;</span><span class="p">)</span>
+     
+    <span class="c1"># Split data into subsets:</span>
+    <span class="k">for</span> <span class="n">subset</span><span class="p">,</span> <span class="n">pro_geom</span><span class="p">,</span> <span class="n">vol_geom</span> <span class="ow">in</span> <span class="n">_subset_generator_</span><span class="p">(</span><span class="n">projections</span><span class="p">,</span> <span class="n">volume</span><span class="p">,</span> <span class="n">geometry</span><span class="p">,</span> <span class="n">copy</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span>
+        
+        <span class="c1"># Copy is made here to make sure the subset is contiguous:</span>
+        <span class="n">subset_c</span> <span class="o">=</span> <span class="n">_contiguous_check_</span><span class="p">(</span><span class="n">subset</span><span class="p">,</span> <span class="n">copy</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> 
+        
+        <span class="n">_forwardproject_block_add_</span><span class="p">(</span><span class="n">subset</span><span class="p">,</span> <span class="n">volume</span><span class="p">,</span> <span class="n">pro_geom</span><span class="p">,</span> <span class="n">vol_geom</span><span class="p">,</span> <span class="n">sign</span><span class="p">)</span>
+        <span class="n">subset</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">subset_c</span>
+        
+        <span class="c1"># Progress:</span>
+        <span class="n">_pbar_update_</span><span class="p">(</span><span class="n">pbar</span><span class="p">)</span>
+        
+    <span class="c1"># Stop progress bar    </span>
+    <span class="n">_pbar_close_</span><span class="p">(</span><span class="n">pbar</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="backproject"><a class="viewcode-back" href="../../flextomo.html#flextomo.projector.backproject">[docs]</a><span class="k">def</span> <span class="nf">backproject</span><span class="p">(</span><span class="n">projections</span><span class="p">,</span> <span class="n">volume</span><span class="p">,</span> <span class="n">geometry</span><span class="p">,</span> <span class="n">filtered</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">sign</span> <span class="o">=</span> <span class="mi">1</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Backproject using standard ASTRA functionality. </span>
+<span class="sd">    If data array is memmap, backprojection is done using 10+ subsets to save RAM.</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">        projections : input numpy.array (dtype = float32) with the following dimensions: [vrt, rot, hrz]</span>
+<span class="sd">        volume      : output numpy.array (dtype = float32) with the following dimensions: [vrt, mag, hrz]</span>
+<span class="sd">        geometry    : geometry description. See flexData.geometry</span>
+<span class="sd">        filtered    : use Feldkamp (True) or unfiltered (False) backprojection</span>
+<span class="sd">        sign        : either +1 or -1 (add or subtract from volume)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Get settings:</span>
+    <span class="n">subsets</span> <span class="o">=</span> <span class="n">settings</span><span class="o">.</span><span class="n">subsets</span>
+    
+    <span class="c1"># Weight correction    </span>
+    <span class="n">bp_weight</span> <span class="o">=</span> <span class="n">_bp_norm_</span><span class="p">(</span><span class="n">projections</span><span class="p">,</span> <span class="n">volume</span><span class="p">,</span> <span class="n">geometry</span><span class="p">)</span>
+    
+    <span class="c1"># Check if volume array is contiguous:</span>
+    <span class="n">volume</span> <span class="o">=</span> <span class="n">_contiguous_check_</span><span class="p">(</span><span class="n">volume</span><span class="p">,</span> <span class="n">copy</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> 
+    
+    <span class="c1"># Progress bar:</span>
+    <span class="n">pbar</span> <span class="o">=</span> <span class="n">_pbar_start_</span><span class="p">(</span><span class="n">subsets</span><span class="p">,</span> <span class="s1">&#39;subsets&#39;</span><span class="p">)</span>
+        
+    <span class="k">for</span> <span class="n">subset</span><span class="p">,</span> <span class="n">pro_geom</span><span class="p">,</span> <span class="n">vol_geom</span> <span class="ow">in</span> <span class="n">_subset_generator_</span><span class="p">(</span><span class="n">projections</span><span class="p">,</span> <span class="n">volume</span><span class="p">,</span> <span class="n">geometry</span><span class="p">,</span> <span class="n">copy</span> <span class="o">=</span> <span class="kc">True</span><span class="p">):</span>
+        
+        <span class="c1"># Check projections:</span>
+        <span class="n">subset</span> <span class="o">=</span> <span class="n">_contiguous_check_</span><span class="p">(</span><span class="n">subset</span><span class="p">,</span> <span class="n">copy</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> 
+        
+        <span class="c1"># Normalize FDK and BP correctly:</span>
+        <span class="k">if</span> <span class="n">filtered</span><span class="p">:</span>
+            <span class="n">subset</span> <span class="o">*=</span> <span class="n">subset</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">/</span> <span class="n">projections</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">subset</span> <span class="o">*=</span> <span class="n">bp_weight</span> 
+
+        <span class="c1"># Backproject:    </span>
+        <span class="n">_backproject_block_add_</span><span class="p">(</span><span class="n">subset</span><span class="p">,</span> <span class="n">volume</span><span class="p">,</span> <span class="n">pro_geom</span><span class="p">,</span> <span class="n">vol_geom</span><span class="p">,</span> <span class="n">filtered</span><span class="p">,</span> <span class="n">sign</span><span class="p">)</span>  
+
+        <span class="c1"># Progress:</span>
+        <span class="n">_pbar_update_</span><span class="p">(</span><span class="n">pbar</span><span class="p">)</span>
+
+    <span class="c1"># Stop progress bar    </span>
+    <span class="n">_pbar_close_</span><span class="p">(</span><span class="n">pbar</span><span class="p">)</span></div>
+    
+<div class="viewcode-block" id="l2_update"><a class="viewcode-back" href="../../flextomo.html#flextomo.projector.l2_update">[docs]</a><span class="k">def</span> <span class="nf">l2_update</span><span class="p">(</span><span class="n">projections</span><span class="p">,</span> <span class="n">volume</span><span class="p">,</span> <span class="n">geometry</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A single L2-norm minimization update. Supports subsets.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Global settings:</span>
+    <span class="n">update</span> <span class="o">=</span> <span class="n">settings</span><span class="o">.</span><span class="n">update_residual</span>
+    <span class="n">studentst</span> <span class="o">=</span> <span class="n">settings</span><span class="o">.</span><span class="n">student</span>
+    
+    <span class="n">subsets</span> <span class="o">=</span> <span class="n">_subset_count_</span><span class="p">(</span><span class="n">projections</span><span class="p">)</span>
+        
+    <span class="c1"># Normalization factor:</span>
+    <span class="n">bp_weight</span> <span class="o">=</span> <span class="n">_bp_norm_</span><span class="p">(</span><span class="n">projections</span><span class="p">,</span> <span class="n">volume</span><span class="p">,</span> <span class="n">geometry</span><span class="p">)</span>
+    
+    <span class="c1"># Residual:    </span>
+    <span class="n">rnorm</span> <span class="o">=</span> <span class="mi">0</span>
+    
+    <span class="c1"># Split data into subsets:</span>
+    <span class="k">for</span> <span class="n">subset</span><span class="p">,</span> <span class="n">pro_geom</span><span class="p">,</span> <span class="n">vol_geom</span> <span class="ow">in</span> <span class="n">_subset_generator_</span><span class="p">(</span><span class="n">projections</span><span class="p">,</span> <span class="n">volume</span><span class="p">,</span> <span class="n">geometry</span><span class="p">,</span> <span class="n">copy</span> <span class="o">=</span> <span class="kc">True</span><span class="p">):</span>
+                
+        <span class="c1"># Forwardproject:</span>
+        <span class="n">residual</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">subset</span><span class="p">)</span>
+        <span class="n">_forwardproject_block_add_</span><span class="p">(</span><span class="n">residual</span><span class="p">,</span> <span class="n">volume</span><span class="p">,</span> <span class="n">pro_geom</span><span class="p">,</span> <span class="n">vol_geom</span><span class="p">)</span>   
+            
+        <span class="c1"># Apply filters:</span>
+        <span class="n">residual</span> <span class="o">=</span> <span class="n">_filter_residual_</span><span class="p">(</span><span class="n">subset</span><span class="p">,</span> <span class="n">residual</span><span class="p">)</span>
+        
+        <span class="c1"># L2 norm (use the last block to update):</span>
+        <span class="k">if</span> <span class="n">update</span><span class="p">:</span>
+            <span class="n">rnorm</span> <span class="o">+=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">sqrt</span><span class="p">((</span><span class="n">residual</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">())</span>
+        
+        <span class="c1"># Apply StudentsT norm</span>
+        <span class="k">if</span> <span class="n">studentst</span><span class="p">:</span>
+            <span class="n">degree</span> <span class="o">=</span> <span class="mi">6</span>
+            <span class="n">residual</span> <span class="o">=</span> <span class="n">_studentst_</span><span class="p">(</span><span class="n">residual</span><span class="p">,</span> <span class="n">degree</span><span class="p">)</span>
+        
+        <span class="c1"># Project</span>
+        <span class="n">residual</span> <span class="o">*=</span> <span class="n">bp_weight</span> <span class="o">*</span> <span class="n">subsets</span> <span class="o">*</span> <span class="mi">2</span>
+        <span class="n">_backproject_block_add_</span><span class="p">(</span><span class="n">residual</span><span class="p">,</span> <span class="n">volume</span><span class="p">,</span> <span class="n">pro_geom</span><span class="p">,</span> <span class="n">vol_geom</span><span class="p">,</span> <span class="n">filtered</span>  <span class="o">=</span> <span class="kc">False</span><span class="p">)</span>    
+        
+    <span class="k">return</span> <span class="n">rnorm</span> <span class="o">/</span> <span class="n">subsets</span></div>
+
+<div class="viewcode-block" id="pwls_update"><a class="viewcode-back" href="../../flextomo.html#flextomo.projector.pwls_update">[docs]</a><span class="k">def</span> <span class="nf">pwls_update</span><span class="p">(</span><span class="n">projections</span><span class="p">,</span> <span class="n">volume</span><span class="p">,</span> <span class="n">geometry</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A single L2-norm update that applies weights based on Poisson </span>
+<span class="sd">    statistics to both residual and volume update. </span>
+<span class="sd">    Uses more memory than the standard l2_update.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Global settings:</span>
+    <span class="n">update</span> <span class="o">=</span> <span class="n">settings</span><span class="o">.</span><span class="n">update_residual</span>   
+    <span class="n">subsets</span> <span class="o">=</span> <span class="n">_subset_count_</span><span class="p">(</span><span class="n">projections</span><span class="p">)</span>
+        
+    <span class="c1"># Normalization factor:</span>
+    <span class="n">bp_weight</span> <span class="o">=</span> <span class="n">_bp_norm_</span><span class="p">(</span><span class="n">projections</span><span class="p">,</span> <span class="n">volume</span><span class="p">,</span> <span class="n">geometry</span><span class="p">)</span>
+      
+    <span class="c1"># Residual:    </span>
+    <span class="n">rnorm</span> <span class="o">=</span> <span class="mi">0</span>
+    
+    <span class="c1"># Split data into subsets:</span>
+    <span class="k">for</span> <span class="n">subset</span><span class="p">,</span> <span class="n">pro_geom</span><span class="p">,</span> <span class="n">vol_geom</span> <span class="ow">in</span> <span class="n">_subset_generator_</span><span class="p">(</span><span class="n">projections</span><span class="p">,</span> <span class="n">volume</span><span class="p">,</span> <span class="n">geometry</span><span class="p">,</span> <span class="n">copy</span> <span class="o">=</span> <span class="kc">True</span><span class="p">):</span>
+                
+        <span class="c1"># Volume update:</span>
+        <span class="n">vol_tmp</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">volume</span><span class="p">)</span>
+        <span class="n">bwp_w</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">volume</span><span class="p">)</span>
+        
+        <span class="c1"># Compute weights:</span>
+        <span class="n">fwp_w</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">subset</span> <span class="o">/</span> <span class="n">subset</span><span class="o">.</span><span class="n">mean</span><span class="p">())</span>
+        <span class="n">_backproject_block_add_</span><span class="p">(</span><span class="n">fwp_w</span><span class="p">,</span> <span class="n">bwp_w</span><span class="p">,</span> <span class="n">pro_geom</span><span class="p">,</span> <span class="n">vol_geom</span><span class="p">)</span>
+        
+        <span class="c1"># Forwardproject:</span>
+        <span class="n">residual</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">subset</span><span class="p">)</span>
+        <span class="n">_forwardproject_block_add_</span><span class="p">(</span><span class="n">residual</span><span class="p">,</span> <span class="n">volume</span><span class="p">,</span> <span class="n">pro_geom</span><span class="p">,</span> <span class="n">vol_geom</span><span class="p">)</span>   
+        
+        <span class="c1"># Apply filters:</span>
+        <span class="n">residual</span> <span class="o">=</span> <span class="n">_filter_residual_</span><span class="p">(</span><span class="n">subset</span><span class="p">,</span> <span class="n">residual</span><span class="p">)</span> 
+        
+        <span class="c1"># L2 norm (use the last block to update):</span>
+        <span class="k">if</span> <span class="n">update</span><span class="p">:</span>
+            <span class="n">rnorm</span> <span class="o">+=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">sqrt</span><span class="p">((</span><span class="n">residual</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">())</span>
+        
+        <span class="c1"># Project</span>
+        <span class="n">residual</span> <span class="o">*=</span> <span class="n">bp_weight</span> <span class="o">*</span> <span class="n">subsets</span> <span class="o">*</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">fwp_w</span>
+        <span class="n">_backproject_block_add_</span><span class="p">(</span><span class="n">residual</span><span class="p">,</span> <span class="n">vol_tmp</span><span class="p">,</span> <span class="n">pro_geom</span><span class="p">,</span> <span class="n">vol_geom</span><span class="p">,</span> <span class="n">filtered</span>  <span class="o">=</span> <span class="kc">False</span><span class="p">)</span>    
+            
+        <span class="c1"># Apply volume weights:</span>
+        <span class="n">eps</span> <span class="o">=</span> <span class="n">bwp_w</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="o">/</span> <span class="mi">100</span>    
+        <span class="n">bwp_w</span><span class="p">[</span><span class="n">bwp_w</span> <span class="o">&lt;</span> <span class="n">eps</span><span class="p">]</span> <span class="o">=</span> <span class="n">eps</span>
+                
+        <span class="n">volume</span> <span class="o">+=</span> <span class="n">vol_tmp</span> <span class="o">/</span> <span class="n">bwp_w</span>
+        
+    <span class="k">return</span> <span class="n">rnorm</span> <span class="o">/</span> <span class="n">subsets</span></div>
+
+<div class="viewcode-block" id="fista_update"><a class="viewcode-back" href="../../flextomo.html#flextomo.projector.fista_update">[docs]</a><span class="k">def</span> <span class="nf">fista_update</span><span class="p">(</span><span class="n">projections</span><span class="p">,</span> <span class="n">vol</span><span class="p">,</span> <span class="n">vol_old</span><span class="p">,</span> <span class="n">vol_t</span><span class="p">,</span> <span class="n">vol_tv</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">geometry</span><span class="p">,</span> <span class="n">lmbda</span> <span class="o">=</span> <span class="mi">0</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A single FISTA step. Supports blocking and subsets.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">bounds</span> <span class="o">=</span> <span class="n">settings</span><span class="o">.</span><span class="n">bounds</span>
+    <span class="n">subsets</span> <span class="o">=</span> <span class="n">_subset_count_</span><span class="p">(</span><span class="n">projections</span><span class="p">)</span>
+    
+    <span class="n">vol_old</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">vol</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>  
+    <span class="n">vol</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">vol_t</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    
+    <span class="n">t_old</span> <span class="o">=</span> <span class="n">t</span> 
+    <span class="n">t</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">numpy</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="mi">4</span> <span class="o">*</span> <span class="n">t</span><span class="o">**</span><span class="mi">2</span><span class="p">))</span><span class="o">/</span><span class="mi">2</span>
+    
+    <span class="n">L</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">/</span> <span class="n">subsets</span>
+    
+    <span class="c1"># A*(A(x) - y):</span>
+    <span class="n">norm</span> <span class="o">=</span> <span class="n">l2_update</span><span class="p">(</span><span class="n">projections</span><span class="p">,</span> <span class="n">vol_t</span><span class="p">,</span> <span class="n">geometry</span><span class="p">)</span>
+    
+    <span class="c1"># Outside of the subsets loop:        </span>
+    <span class="k">if</span> <span class="n">lmbda</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">l1_update</span><span class="p">(</span><span class="n">vol_tv</span><span class="p">,</span> <span class="n">vol_t</span><span class="p">,</span> <span class="n">vol</span><span class="p">,</span> <span class="n">L</span><span class="p">,</span> <span class="n">lmbda</span><span class="p">)</span>
+    
+    <span class="k">elif</span> <span class="n">bounds</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">vol</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">vol_t</span><span class="p">,</span> <span class="n">a_min</span> <span class="o">=</span> <span class="n">bounds</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">a_max</span> <span class="o">=</span> <span class="n">bounds</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>  
+        
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">vol</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">vol_t</span>
+    
+    <span class="n">vol_t</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">vol</span> <span class="o">+</span> <span class="p">((</span><span class="n">t_old</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="n">t</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">vol</span> <span class="o">-</span> <span class="n">vol_old</span><span class="p">)</span>
+    
+    <span class="k">return</span> <span class="n">norm</span>        </div>
+                
+<div class="viewcode-block" id="l1_update"><a class="viewcode-back" href="../../flextomo.html#flextomo.projector.l1_update">[docs]</a><span class="k">def</span> <span class="nf">l1_update</span><span class="p">(</span><span class="n">vol_tv</span><span class="p">,</span> <span class="n">vol_t</span><span class="p">,</span> <span class="n">vol</span><span class="p">,</span> <span class="n">L</span><span class="p">,</span> <span class="n">lamb</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Calculate image with lower TV. Stores the results in vol. It uses residual vol_tv from the last time it was called.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">bounds</span> <span class="o">=</span> <span class="n">settings</span><span class="o">.</span><span class="n">bounds</span>
+    
+    <span class="c1"># Modified TV residual:</span>
+    <span class="n">final_vol_tv</span> <span class="o">=</span> <span class="n">vol_tv</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    
+    <span class="c1"># these are some internal variables for this function:</span>
+    <span class="n">tau</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="n">stop_count</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+    <span class="n">ii</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">la</span> <span class="o">=</span> <span class="n">lamb</span> <span class="o">/</span> <span class="n">L</span>
+
+    <span class="c1"># End result:</span>
+    <span class="n">vol</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">vol_t</span> <span class="o">*</span> <span class="mi">0</span>
+
+    <span class="k">while</span> <span class="p">((</span><span class="n">ii</span> <span class="o">&lt;</span> <span class="mi">6</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">stop_count</span> <span class="o">&lt;</span> <span class="mi">3</span><span class="p">)):</span>
+        <span class="n">ii</span> <span class="o">=</span> <span class="n">ii</span> <span class="o">+</span> <span class="mi">1</span>
+
+        <span class="c1"># old Z:</span>
+        <span class="n">vol_old</span> <span class="o">=</span> <span class="n">vol</span><span class="o">.</span><span class="n">copy</span><span class="p">();</span>
+
+        <span class="c1"># new Xout:</span>
+        <span class="n">vol</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">vol_t</span> <span class="o">-</span> <span class="n">la</span> <span class="o">*</span> <span class="n">data</span><span class="o">.</span><span class="n">divergence</span><span class="p">(</span><span class="n">final_vol_tv</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="n">bounds</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">numpy</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">vol</span><span class="p">,</span> <span class="n">a_min</span> <span class="o">=</span> <span class="n">bounds</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">a_max</span> <span class="o">=</span> <span class="n">bounds</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">out</span> <span class="o">=</span> <span class="n">vol</span><span class="p">)</span>
+                    
+        <span class="c1"># Taking a step towards minus of the gradient</span>
+        <span class="n">vol_tv_old</span> <span class="o">=</span> <span class="n">vol_tv</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">vol_tv</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">final_vol_tv</span> <span class="o">-</span> <span class="mi">1</span><span class="o">/</span><span class="p">(</span><span class="mi">8</span><span class="o">*</span><span class="n">la</span><span class="p">)</span> <span class="o">*</span> <span class="n">data</span><span class="o">.</span><span class="n">gradient</span><span class="p">(</span><span class="n">vol</span><span class="p">)</span>
+
+        <span class="c1"># this part can be changed to anisotropic, now it&#39;s L1 type:</span>
+        <span class="n">norm</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">vol</span><span class="p">)</span>
+    
+        <span class="k">for</span> <span class="n">jj</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">):</span>
+            <span class="n">norm</span> <span class="o">+=</span> <span class="n">vol_tv</span><span class="p">[</span><span class="n">jj</span><span class="p">]</span><span class="o">**</span><span class="mi">2</span>
+        
+        <span class="n">norm</span><span class="p">[</span><span class="n">norm</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="n">norm</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">norm</span><span class="p">)</span>    
+        
+        <span class="n">vol_tv</span> <span class="o">/=</span> <span class="n">norm</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="p">:]</span>
+        
+                    
+        <span class="c1">#Updating residual and tau:</span>
+        <span class="n">tau_</span> <span class="o">=</span> <span class="n">tau</span>
+        <span class="n">tau</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">numpy</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="mi">4</span><span class="o">*</span><span class="n">tau_</span><span class="o">**</span><span class="mi">2</span><span class="p">))</span> <span class="o">/</span> <span class="mi">2</span>
+
+        <span class="n">final_vol_tv</span> <span class="o">=</span> <span class="n">vol_tv</span> <span class="o">+</span> <span class="p">(</span><span class="n">tau_</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">tau</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">vol_tv</span> <span class="o">-</span> <span class="n">vol_tv_old</span><span class="p">)</span>  
+
+        <span class="c1"># stop criterion:</span>
+        <span class="n">re</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">vol</span> <span class="o">-</span> <span class="n">vol_old</span><span class="p">)</span> <span class="o">/</span> <span class="n">numpy</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">vol</span><span class="p">);</span>
+
+        <span class="c1">#print(re)</span>
+        
+        <span class="k">if</span> <span class="p">(</span><span class="n">re</span> <span class="o">&lt;</span> <span class="mf">1e-3</span><span class="p">):</span>
+            <span class="n">stop_count</span> <span class="o">=</span> <span class="n">stop_count</span> <span class="o">+</span> <span class="mi">1</span><span class="p">;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">stop_count</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span></div>
+
+<div class="viewcode-block" id="em_update"><a class="viewcode-back" href="../../flextomo.html#flextomo.projector.em_update">[docs]</a><span class="k">def</span> <span class="nf">em_update</span><span class="p">(</span><span class="n">projections</span><span class="p">,</span> <span class="n">volume</span><span class="p">,</span> <span class="n">geometry</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A single Expecrtation Maximization step. Supports blocking and subsets.</span>
+<span class="sd">    &quot;&quot;&quot;</span>  
+    <span class="c1"># Global settings:</span>
+    <span class="n">ss</span> <span class="o">=</span> <span class="n">settings</span>
+    <span class="n">update</span> <span class="o">=</span> <span class="n">ss</span><span class="o">.</span><span class="n">update_residual</span>
+    
+    <span class="n">subsets</span> <span class="o">=</span> <span class="n">_subset_count_</span><span class="p">(</span><span class="n">projections</span><span class="p">)</span>
+        
+    <span class="c1"># Normalization factor:</span>
+    <span class="n">bp_norm</span> <span class="o">=</span> <span class="n">_bp_norm_</span><span class="p">(</span><span class="n">projections</span><span class="p">,</span> <span class="n">volume</span><span class="p">,</span> <span class="n">geometry</span><span class="p">)</span>   
+
+    <span class="c1"># Residual:    </span>
+    <span class="n">rnorm</span> <span class="o">=</span> <span class="mi">0</span>
+    
+    <span class="c1"># Split data into subsets:</span>
+    <span class="k">for</span> <span class="n">subset</span><span class="p">,</span> <span class="n">pro_geom</span><span class="p">,</span> <span class="n">vol_geom</span> <span class="ow">in</span> <span class="n">_subset_generator_</span><span class="p">(</span><span class="n">projections</span><span class="p">,</span> <span class="n">volume</span><span class="p">,</span> <span class="n">geometry</span><span class="p">,</span> <span class="n">copy</span> <span class="o">=</span> <span class="kc">True</span><span class="p">):</span>
+        
+        <span class="c1"># Reserve memory for a forward projection (keep it separate):</span>
+        <span class="n">residual</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">subset</span><span class="p">)</span>
+        
+        <span class="c1"># Forwardproject:</span>
+        <span class="n">_forwardproject_block_add_</span><span class="p">(</span><span class="n">residual</span><span class="p">,</span> <span class="n">volume</span><span class="p">,</span> <span class="n">pro_geom</span><span class="p">,</span> <span class="n">vol_geom</span><span class="p">)</span>   
+
+        <span class="c1"># Compute residual:        </span>
+        <span class="n">residual</span><span class="p">[</span><span class="n">residual</span> <span class="o">&lt;</span> <span class="n">residual</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="o">/</span> <span class="mi">100</span><span class="p">]</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">inf</span>  
+        <span class="n">residual</span> <span class="o">=</span> <span class="p">(</span><span class="n">subset</span> <span class="o">/</span> <span class="n">residual</span><span class="p">)</span>
+                    
+        <span class="c1"># L2 norm (use the last block to update):</span>
+        <span class="k">if</span> <span class="n">update</span><span class="p">:</span>
+            <span class="n">res_pos</span> <span class="o">=</span> <span class="n">residual</span><span class="p">[</span><span class="n">residual</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">]</span>
+            <span class="n">rnorm</span> <span class="o">+=</span> <span class="n">res_pos</span><span class="o">.</span><span class="n">std</span><span class="p">()</span> <span class="o">/</span> <span class="n">res_pos</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+            
+        <span class="c1"># Project</span>
+        <span class="n">residual</span> <span class="o">*=</span> <span class="n">bp_norm</span> <span class="o">*</span> <span class="n">subsets</span> <span class="o">*</span> <span class="mi">2</span>
+        <span class="n">_backproject_block_mult_</span><span class="p">(</span><span class="n">residual</span><span class="p">,</span> <span class="n">volume</span><span class="p">,</span> <span class="n">pro_geom</span><span class="p">,</span> <span class="n">vol_geom</span><span class="p">)</span>    
+       
+    <span class="k">return</span> <span class="n">rnorm</span> <span class="o">/</span> <span class="n">subsets</span></div>
+        
+<span class="k">def</span> <span class="nf">_filter_residual_</span><span class="p">(</span><span class="n">projections</span><span class="p">,</span> <span class="n">forward</span><span class="p">):</span>    
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Apply Fourier filter and Poisson weights to a residual</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">poisson</span> <span class="o">=</span> <span class="n">settings</span><span class="o">.</span><span class="n">poisson</span>
+    <span class="n">fourier_filter</span> <span class="o">=</span> <span class="n">settings</span><span class="o">.</span><span class="n">fourier_filter</span>
+    
+    <span class="k">if</span> <span class="n">fourier_filter</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">forward</span> <span class="o">=</span> <span class="n">projections</span> <span class="o">-</span> <span class="n">forward</span>
+            
+    <span class="k">else</span><span class="p">:</span>  
+        <span class="c1"># Apply Fourier filter:</span>
+        <span class="n">forward</span> <span class="o">=</span> <span class="n">fourier_filter</span> <span class="o">*</span> <span class="n">numpy</span><span class="o">.</span><span class="n">fft</span><span class="o">.</span><span class="n">fft2</span><span class="p">(</span><span class="n">projections</span><span class="p">,</span> <span class="n">axes</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+        <span class="n">forward</span> <span class="o">-=</span> <span class="p">(</span><span class="n">fourier_filter</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="n">numpy</span><span class="o">.</span><span class="n">fft</span><span class="o">.</span><span class="n">fft2</span><span class="p">(</span><span class="n">forward</span><span class="p">,</span> <span class="n">axes</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span> 
+        <span class="n">forward</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">fft</span><span class="o">.</span><span class="n">ifft2</span><span class="p">(</span><span class="n">forward</span><span class="p">,</span> <span class="n">axes</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">)))</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s1">&#39;float32&#39;</span><span class="p">)</span>            
+
+    <span class="c1"># Apply Poisson weights with some scaling:</span>
+    <span class="k">if</span> <span class="n">poisson</span><span class="p">:</span>
+        <span class="n">forward</span> <span class="o">*=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">projections</span> <span class="o">/</span> <span class="n">projections</span><span class="o">.</span><span class="n">mean</span><span class="p">())</span>
+    
+    <span class="k">return</span> <span class="n">forward</span>
+        
+<span class="k">def</span> <span class="nf">_pbar_start_</span><span class="p">(</span><span class="n">total</span><span class="p">,</span> <span class="n">unit</span> <span class="o">=</span> <span class="s1">&#39;it&#39;</span><span class="p">,</span> <span class="n">ascii</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    If progress_bar is ON, initialize it.</span>
+<span class="sd">    &quot;&quot;&quot;</span>  
+    <span class="n">sleep</span><span class="p">(</span><span class="mf">0.3</span><span class="p">)</span>
+       
+    <span class="k">if</span> <span class="n">settings</span><span class="o">.</span><span class="n">progress_bar</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">tqdm</span><span class="p">(</span><span class="n">total</span> <span class="o">=</span> <span class="n">total</span><span class="p">,</span> <span class="n">unit</span> <span class="o">=</span> <span class="n">unit</span><span class="p">,</span> <span class="n">ascii</span> <span class="o">=</span> <span class="n">ascii</span><span class="p">)</span>
+    
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span>
+        
+<span class="k">def</span> <span class="nf">_pbar_update_</span><span class="p">(</span><span class="n">pbar</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">pbar</span><span class="p">:</span>
+        <span class="n">pbar</span><span class="o">.</span><span class="n">update</span><span class="p">()</span>
+        
+<span class="k">def</span> <span class="nf">_pbar_close_</span><span class="p">(</span><span class="n">pbar</span><span class="p">):</span>
+    
+    <span class="k">if</span> <span class="n">pbar</span><span class="p">:</span>    
+        <span class="k">if</span> <span class="n">pbar</span><span class="o">.</span><span class="n">total</span> <span class="o">&gt;</span> <span class="n">pbar</span><span class="o">.</span><span class="n">n</span><span class="p">:</span>
+            <span class="n">pbar</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">pbar</span><span class="o">.</span><span class="n">total</span><span class="o">-</span><span class="n">pbar</span><span class="o">.</span><span class="n">n</span><span class="p">)</span>        
+        <span class="n">pbar</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+<span class="k">def</span> <span class="nf">_forwardprojector_norm_</span><span class="p">(</span><span class="n">vol_shape</span><span class="p">,</span> <span class="n">geometry</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Norm of the forward projection. Obtained through reverse engeneering.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># We assume that the longest possible ray equal to the diagonal of the volume:</span>
+    <span class="n">width</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">sqrt</span><span class="p">((</span><span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">vol_shape</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span>
+    
+    <span class="k">return</span> <span class="n">width</span> <span class="o">*</span> <span class="n">geometry</span><span class="o">.</span><span class="n">voxel</span>
+
+<span class="k">def</span> <span class="nf">_backprojector_norm_</span><span class="p">(</span><span class="n">vol_shape</span><span class="p">,</span> <span class="n">geometry</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Norm of the forward projection. Obtained through reverse engeneering.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># We assume that the longest possible ray equal to the diagonal of the volume:</span>
+    <span class="n">width</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">sqrt</span><span class="p">((</span><span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">vol_shape</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span>
+    
+    <span class="k">return</span> <span class="mi">1</span> <span class="o">/</span> <span class="p">(</span><span class="n">geometry</span><span class="o">.</span><span class="n">voxel</span> <span class="o">*</span> <span class="n">width</span><span class="p">)</span>
+        
+<span class="k">def</span> <span class="nf">_bp_norm_</span><span class="p">(</span><span class="n">projections</span><span class="p">,</span> <span class="n">volume</span><span class="p">,</span> <span class="n">geometry</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Compute a normalization factor in backprojection operator....</span>
+<span class="sd">    &quot;&quot;&quot;</span>       
+    <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">geometry</span><span class="p">)</span> <span class="o">==</span> <span class="nb">list</span><span class="p">:</span>
+        <span class="c1"># This is a dirty fix, assuming that if a list of geometries is provided, they have same voxel and pixel sizes.</span>
+        <span class="n">vv</span> <span class="o">=</span> <span class="n">geometry</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">voxel</span>
+        <span class="n">det_sam</span> <span class="o">=</span> <span class="n">geometry</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">det_sample</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        
+        <span class="n">pix</span> <span class="o">=</span> <span class="p">(</span><span class="n">vv</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">vv</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">vv</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">*</span> <span class="n">vv</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span> <span class="o">/</span> <span class="n">det_sam</span>
+        <span class="k">return</span> <span class="mi">1</span> <span class="o">/</span> <span class="p">(</span><span class="n">projections</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">pix</span> <span class="o">*</span> <span class="nb">max</span><span class="p">(</span><span class="n">volume</span><span class="o">.</span><span class="n">shape</span><span class="p">))</span>
+    
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">vv</span> <span class="o">=</span> <span class="n">geometry</span><span class="o">.</span><span class="n">voxel</span>
+        <span class="n">det_sam</span> <span class="o">=</span> <span class="n">geometry</span><span class="o">.</span><span class="n">det_sample</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    
+        <span class="n">pix</span> <span class="o">=</span> <span class="p">(</span><span class="n">vv</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">vv</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">vv</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">*</span> <span class="n">vv</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span> <span class="o">/</span> <span class="n">det_sam</span>
+        <span class="k">return</span> <span class="mi">1</span> <span class="o">/</span> <span class="p">(</span><span class="n">projections</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">pix</span> <span class="o">*</span> <span class="nb">max</span><span class="p">(</span><span class="n">volume</span><span class="o">.</span><span class="n">shape</span><span class="p">))</span>
+        
+<span class="k">def</span> <span class="nf">_backproject_block_add_</span><span class="p">(</span><span class="n">projections</span><span class="p">,</span> <span class="n">volume</span><span class="p">,</span> <span class="n">proj_geom</span><span class="p">,</span> <span class="n">vol_geom</span><span class="p">,</span> <span class="n">filtered</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">sign</span> <span class="o">=</span> <span class="mi">1</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Additive backprojection of a single block. </span>
+<span class="sd">    Use negative = True if you want subtraction instead of addition.</span>
+<span class="sd">    &quot;&quot;&quot;</span>  
+    <span class="n">_contiguous_check_</span><span class="p">(</span><span class="n">volume</span><span class="p">,</span> <span class="n">copy</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> 
+         
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">sign</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">projections</span> <span class="o">*=</span> <span class="o">-</span><span class="mi">1</span>
+            
+        <span class="c1"># If volume is a memmap - create a temporary copy in RAM    </span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">volume</span><span class="p">,</span> <span class="n">numpy</span><span class="o">.</span><span class="n">memmap</span><span class="p">):</span>
+            <span class="n">vol_temp</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">ascontiguousarray</span><span class="p">(</span><span class="n">volume</span><span class="p">)</span>
+            
+            <span class="n">vol_id</span> <span class="o">=</span> <span class="n">astra</span><span class="o">.</span><span class="n">data3d</span><span class="o">.</span><span class="n">link</span><span class="p">(</span><span class="s1">&#39;-vol&#39;</span><span class="p">,</span> <span class="n">vol_geom</span><span class="p">,</span> <span class="n">vol_temp</span><span class="p">)</span>    
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">vol_id</span> <span class="o">=</span> <span class="n">astra</span><span class="o">.</span><span class="n">data3d</span><span class="o">.</span><span class="n">link</span><span class="p">(</span><span class="s1">&#39;-vol&#39;</span><span class="p">,</span> <span class="n">vol_geom</span><span class="p">,</span> <span class="n">volume</span><span class="p">)</span>    
+                    
+        <span class="n">sin_id</span> <span class="o">=</span> <span class="n">astra</span><span class="o">.</span><span class="n">data3d</span><span class="o">.</span><span class="n">link</span><span class="p">(</span><span class="s1">&#39;-sino&#39;</span><span class="p">,</span> <span class="n">proj_geom</span><span class="p">,</span> <span class="n">projections</span><span class="p">)</span>        
+        
+        
+        <span class="n">projector_id</span> <span class="o">=</span> <span class="n">astra</span><span class="o">.</span><span class="n">create_projector</span><span class="p">(</span><span class="s1">&#39;cuda3d&#39;</span><span class="p">,</span> <span class="n">proj_geom</span><span class="p">,</span> <span class="n">vol_geom</span><span class="p">)</span>
+        
+        <span class="c1"># We are using accumulate version to avoid creating additional copies of data.</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">filtered</span><span class="p">:</span>
+            <span class="n">asex</span><span class="o">.</span><span class="n">accumulate_BP</span><span class="p">(</span><span class="n">projector_id</span><span class="p">,</span> <span class="n">vol_id</span><span class="p">,</span> <span class="n">sin_id</span><span class="p">)</span>                
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">asex</span><span class="o">.</span><span class="n">accumulate_FDK</span><span class="p">(</span><span class="n">projector_id</span><span class="p">,</span> <span class="n">vol_id</span><span class="p">,</span> <span class="n">sin_id</span><span class="p">)</span>               
+            
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">volume</span><span class="p">,</span> <span class="n">numpy</span><span class="o">.</span><span class="n">memmap</span><span class="p">):</span>
+            <span class="n">volume</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">vol_temp</span>
+                         
+    <span class="k">except</span><span class="p">:</span>
+        <span class="c1"># The idea here is that we try to delete data3d objects even if ASTRA crashed</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">sign</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">projections</span> <span class="o">*=</span> <span class="o">-</span><span class="mi">1</span>
+        
+            <span class="n">astra</span><span class="o">.</span><span class="n">algorithm</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="n">projector_id</span><span class="p">)</span>
+            <span class="n">astra</span><span class="o">.</span><span class="n">data3d</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="n">sin_id</span><span class="p">)</span>
+            <span class="n">astra</span><span class="o">.</span><span class="n">data3d</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="n">vol_id</span><span class="p">)</span>
+            
+        <span class="k">finally</span><span class="p">:</span>
+            <span class="n">info</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">exc_info</span><span class="p">()</span>
+            <span class="n">traceback</span><span class="o">.</span><span class="n">print_exception</span><span class="p">(</span><span class="o">*</span><span class="n">info</span><span class="p">)</span>        
+    
+    <span class="k">if</span> <span class="n">sign</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">projections</span> <span class="o">*=</span> <span class="o">-</span><span class="mi">1</span>
+    
+    <span class="n">astra</span><span class="o">.</span><span class="n">algorithm</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="n">projector_id</span><span class="p">)</span>
+    <span class="n">astra</span><span class="o">.</span><span class="n">data3d</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="n">sin_id</span><span class="p">)</span>
+    <span class="n">astra</span><span class="o">.</span><span class="n">data3d</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="n">vol_id</span><span class="p">)</span>  
+        
+<span class="k">def</span> <span class="nf">_backproject_block_mult_</span><span class="p">(</span> <span class="n">projections</span><span class="p">,</span> <span class="n">volume</span><span class="p">,</span> <span class="n">proj_geom</span><span class="p">,</span> <span class="n">vol_geom</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Multiplicative backprojection of a single block. </span>
+<span class="sd">    &quot;&quot;&quot;</span>           
+    <span class="k">try</span><span class="p">:</span>
+        <span class="c1"># Need to create a copy of the volume:</span>
+        <span class="n">volume_</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">volume</span><span class="p">)</span>
+        
+        <span class="n">sin_id</span> <span class="o">=</span> <span class="n">astra</span><span class="o">.</span><span class="n">data3d</span><span class="o">.</span><span class="n">link</span><span class="p">(</span><span class="s1">&#39;-sino&#39;</span><span class="p">,</span> <span class="n">proj_geom</span><span class="p">,</span> <span class="n">projections</span><span class="p">)</span>        
+        <span class="n">vol_id</span> <span class="o">=</span> <span class="n">astra</span><span class="o">.</span><span class="n">data3d</span><span class="o">.</span><span class="n">link</span><span class="p">(</span><span class="s1">&#39;-vol&#39;</span><span class="p">,</span> <span class="n">vol_geom</span><span class="p">,</span> <span class="n">volume_</span><span class="p">)</span>    
+        
+        <span class="n">projector_id</span> <span class="o">=</span> <span class="n">astra</span><span class="o">.</span><span class="n">create_projector</span><span class="p">(</span><span class="s1">&#39;cuda3d&#39;</span><span class="p">,</span> <span class="n">proj_geom</span><span class="p">,</span> <span class="n">vol_geom</span><span class="p">)</span>
+        
+        <span class="c1"># We are using accumulate version to avoid creating additional copies of data.</span>
+        <span class="n">asex</span><span class="o">.</span><span class="n">accumulate_BP</span><span class="p">(</span><span class="n">projector_id</span><span class="p">,</span> <span class="n">vol_id</span><span class="p">,</span> <span class="n">sin_id</span><span class="p">)</span>                
+                         
+    <span class="k">except</span><span class="p">:</span>
+        <span class="c1"># The idea here is that we try to delete data3d objects even if ASTRA crashed</span>
+        <span class="k">try</span><span class="p">:</span>
+           
+            <span class="n">astra</span><span class="o">.</span><span class="n">algorithm</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="n">projector_id</span><span class="p">)</span>
+            <span class="n">astra</span><span class="o">.</span><span class="n">data3d</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="n">sin_id</span><span class="p">)</span>
+            <span class="n">astra</span><span class="o">.</span><span class="n">data3d</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="n">vol_id</span><span class="p">)</span>
+            
+        <span class="k">finally</span><span class="p">:</span>
+            <span class="n">info</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">exc_info</span><span class="p">()</span>
+            <span class="n">traceback</span><span class="o">.</span><span class="n">print_exception</span><span class="p">(</span><span class="o">*</span><span class="n">info</span><span class="p">)</span>        
+
+    <span class="n">volume</span> <span class="o">*=</span> <span class="n">volume_</span>
+    
+    <span class="n">astra</span><span class="o">.</span><span class="n">algorithm</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="n">projector_id</span><span class="p">)</span>
+    <span class="n">astra</span><span class="o">.</span><span class="n">data3d</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="n">sin_id</span><span class="p">)</span>
+    <span class="n">astra</span><span class="o">.</span><span class="n">data3d</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="n">vol_id</span><span class="p">)</span>      
+            
+<span class="k">def</span> <span class="nf">_forwardproject_block_add_</span><span class="p">(</span> <span class="n">projections</span><span class="p">,</span> <span class="n">volume</span><span class="p">,</span> <span class="n">proj_geom</span><span class="p">,</span> <span class="n">vol_geom</span><span class="p">,</span> <span class="n">sign</span> <span class="o">=</span><span class="mi">1</span> <span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Additive forwardprojection of a single block. </span>
+<span class="sd">    Use negative = True if you want subtraction instead of addition.</span>
+<span class="sd">    &quot;&quot;&quot;</span>      
+    <span class="k">try</span><span class="p">:</span>
+        <span class="c1"># We are goint to negate the projections block and not the whole volume:</span>
+        <span class="k">if</span> <span class="n">sign</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">projections</span> <span class="o">*=</span> <span class="o">-</span><span class="mi">1</span>
+            
+        <span class="c1"># If volume is a memmap - create a temporary copy in RAM    </span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">volume</span><span class="p">,</span> <span class="n">numpy</span><span class="o">.</span><span class="n">memmap</span><span class="p">):</span>
+            <span class="n">vol_temp</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">ascontiguousarray</span><span class="p">(</span><span class="n">volume</span><span class="p">)</span>
+            
+            <span class="n">vol_id</span> <span class="o">=</span> <span class="n">astra</span><span class="o">.</span><span class="n">data3d</span><span class="o">.</span><span class="n">link</span><span class="p">(</span><span class="s1">&#39;-vol&#39;</span><span class="p">,</span> <span class="n">vol_geom</span><span class="p">,</span> <span class="n">vol_temp</span><span class="p">)</span>    
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">vol_id</span> <span class="o">=</span> <span class="n">astra</span><span class="o">.</span><span class="n">data3d</span><span class="o">.</span><span class="n">link</span><span class="p">(</span><span class="s1">&#39;-vol&#39;</span><span class="p">,</span> <span class="n">vol_geom</span><span class="p">,</span> <span class="n">volume</span><span class="p">)</span>        
+                
+        <span class="n">sin_id</span> <span class="o">=</span> <span class="n">astra</span><span class="o">.</span><span class="n">data3d</span><span class="o">.</span><span class="n">link</span><span class="p">(</span><span class="s1">&#39;-sino&#39;</span><span class="p">,</span> <span class="n">proj_geom</span><span class="p">,</span> <span class="n">projections</span><span class="p">)</span>        
+        
+        <span class="n">projector_id</span> <span class="o">=</span> <span class="n">astra</span><span class="o">.</span><span class="n">create_projector</span><span class="p">(</span><span class="s1">&#39;cuda3d&#39;</span><span class="p">,</span> <span class="n">proj_geom</span><span class="p">,</span> <span class="n">vol_geom</span><span class="p">)</span>
+        
+        <span class="c1"># Project!</span>
+        <span class="n">asex</span><span class="o">.</span><span class="n">accumulate_FP</span><span class="p">(</span><span class="n">projector_id</span><span class="p">,</span> <span class="n">vol_id</span><span class="p">,</span> <span class="n">sin_id</span><span class="p">)</span>
+        
+        <span class="c1"># Negate second time:</span>
+        <span class="k">if</span> <span class="n">sign</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">projections</span> <span class="o">*=</span> <span class="o">-</span><span class="mi">1</span>
+             
+    <span class="k">except</span><span class="p">:</span>
+        <span class="c1"># Always try to delete data3d:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">astra</span><span class="o">.</span><span class="n">algorithm</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="n">projector_id</span><span class="p">)</span>
+            <span class="n">astra</span><span class="o">.</span><span class="n">data3d</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="n">sin_id</span><span class="p">)</span>
+            <span class="n">astra</span><span class="o">.</span><span class="n">data3d</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="n">vol_id</span><span class="p">)</span>   
+        <span class="k">finally</span><span class="p">:</span>
+            <span class="n">info</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">exc_info</span><span class="p">()</span>
+            <span class="n">traceback</span><span class="o">.</span><span class="n">print_exception</span><span class="p">(</span><span class="o">*</span><span class="n">info</span><span class="p">)</span>
+        
+    <span class="n">astra</span><span class="o">.</span><span class="n">algorithm</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="n">projector_id</span><span class="p">)</span>
+    <span class="n">astra</span><span class="o">.</span><span class="n">data3d</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="n">sin_id</span><span class="p">)</span>
+    <span class="n">astra</span><span class="o">.</span><span class="n">data3d</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="n">vol_id</span><span class="p">)</span>   
+    
+<span class="k">def</span> <span class="nf">_contiguous_check_</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">copy</span> <span class="o">=</span> <span class="kc">True</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Check if data is contiguous, if not - convert. This makes ASTRA happy.</span>
+<span class="sd">    Careful, it may copy the data and overflow RAM.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">data</span><span class="o">.</span><span class="n">flags</span><span class="p">[</span><span class="s1">&#39;C_CONTIGUOUS&#39;</span><span class="p">]:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">copy</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s1">&#39;Data is not contiguous!&#39;</span><span class="p">)</span>
+        
+        <span class="k">else</span><span class="p">:</span>    
+            <span class="n">data</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">ascontiguousarray</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+    
+    <span class="c1"># Check if data type is correct:</span>
+    <span class="k">if</span> <span class="n">data</span><span class="o">.</span><span class="n">dtype</span> <span class="o">!=</span> <span class="s1">&#39;float32&#39;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">copy</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s1">&#39;Data type is not float32!&#39;</span><span class="p">)</span>
+        
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s1">&#39;float32&#39;</span><span class="p">)</span>
+        
+    <span class="c1"># Sometimes data shape is weird. Check.    </span>
+    <span class="k">if</span> <span class="nb">min</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s1">&#39;Strange data shape:&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">))</span>
+    
+    <span class="k">return</span> <span class="n">data</span>  
+
+<span class="k">def</span> <span class="nf">_studentst_</span><span class="p">(</span><span class="n">res</span><span class="p">,</span> <span class="n">deg</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">scl</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    StudentsT routine</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="c1"># nD to 1D:</span>
+    <span class="n">shape</span> <span class="o">=</span> <span class="n">res</span><span class="o">.</span><span class="n">shape</span>
+    <span class="n">res</span> <span class="o">=</span> <span class="n">res</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span>
+    
+    <span class="c1"># Optimize scale:</span>
+    <span class="k">if</span> <span class="n">scl</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>    
+        <span class="n">fun</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">_misfit_</span><span class="p">(</span><span class="n">res</span><span class="p">[::</span><span class="mi">100</span><span class="p">],</span> <span class="n">x</span><span class="p">,</span> <span class="n">deg</span><span class="p">)</span>
+        <span class="n">scl</span> <span class="o">=</span> <span class="n">optimize</span><span class="o">.</span><span class="n">fmin</span><span class="p">(</span><span class="n">fun</span><span class="p">,</span> <span class="n">x0</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,],</span> <span class="n">disp</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="c1">#scl = numpy.percentile(numpy.abs(res), 90)</span>
+        <span class="c1">#print(scl)</span>
+        <span class="c1">#print(&#39;Scale in Student`s-T is:&#39;, scl)</span>
+        
+    <span class="c1"># Evaluate:    </span>
+    <span class="n">grad</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">_st_</span><span class="p">(</span><span class="n">res</span><span class="p">,</span> <span class="n">scl</span><span class="p">,</span> <span class="n">deg</span><span class="p">),</span> <span class="n">shape</span><span class="p">)</span>
+    
+    <span class="k">return</span> <span class="n">grad</span>
+
+<span class="k">def</span> <span class="nf">_misfit_</span><span class="p">(</span> <span class="n">res</span><span class="p">,</span> <span class="n">scl</span><span class="p">,</span> <span class="n">deg</span><span class="p">):</span>
+    
+    <span class="k">if</span> <span class="n">scl</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span> <span class="k">return</span> <span class="n">numpy</span><span class="o">.</span><span class="n">inf</span>
+    
+    <span class="n">c</span> <span class="o">=</span> <span class="o">-</span><span class="n">numpy</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="n">res</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">special</span><span class="o">.</span><span class="n">gammaln</span><span class="p">((</span><span class="n">deg</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span> <span class="o">-</span> 
+            <span class="n">special</span><span class="o">.</span><span class="n">gammaln</span><span class="p">(</span><span class="n">deg</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span> <span class="o">-</span> <span class="o">.</span><span class="mi">5</span> <span class="o">*</span> <span class="n">numpy</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">pi</span><span class="o">*</span><span class="n">scl</span><span class="o">*</span><span class="n">deg</span><span class="p">))</span>
+    
+    <span class="k">return</span> <span class="n">c</span> <span class="o">+</span> <span class="o">.</span><span class="mi">5</span> <span class="o">*</span> <span class="p">(</span><span class="n">deg</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="nb">sum</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">numpy</span><span class="o">.</span><span class="n">conj</span><span class="p">(</span><span class="n">res</span><span class="p">)</span> <span class="o">*</span> <span class="n">res</span> <span class="o">/</span> <span class="p">(</span><span class="n">scl</span> <span class="o">*</span> <span class="n">deg</span><span class="p">)))</span>
+    
+<span class="k">def</span> <span class="nf">_st_</span><span class="p">(</span> <span class="n">res</span><span class="p">,</span> <span class="n">scl</span><span class="p">,</span> <span class="n">deg</span><span class="p">):</span>   
+    
+    <span class="n">grad</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">float32</span><span class="p">(</span><span class="n">scl</span> <span class="o">*</span> <span class="p">(</span><span class="n">deg</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">res</span> <span class="o">/</span> <span class="p">(</span><span class="n">scl</span> <span class="o">*</span> <span class="n">deg</span> <span class="o">+</span> <span class="n">numpy</span><span class="o">.</span><span class="n">conj</span><span class="p">(</span><span class="n">res</span><span class="p">)</span> <span class="o">*</span> <span class="n">res</span><span class="p">))</span>
+    
+    <span class="k">return</span> <span class="n">grad</span>
+      
+<span class="k">def</span> <span class="nf">_subset_count_</span><span class="p">(</span><span class="n">projections</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Count how many actual subsets we have, taking into account indexing type and total data size.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">count</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">projections</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">list</span><span class="p">:</span>
+        <span class="n">projections</span> <span class="o">=</span> <span class="p">[</span><span class="n">projections</span><span class="p">,]</span>
+        
+    <span class="k">for</span> <span class="n">sl</span> <span class="ow">in</span> <span class="n">_slice_generator_</span><span class="p">(</span><span class="n">projections</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+        <span class="n">count</span> <span class="o">+=</span> <span class="mi">1</span>
+        
+    <span class="k">return</span> <span class="n">count</span>
+    
+<span class="k">def</span> <span class="nf">_slice_generator_</span><span class="p">(</span><span class="n">projections</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Generator of data indexing for subsets. Supports sequiential and equidistant indexing.</span>
+<span class="sd">    &quot;&quot;&quot;</span>   
+    <span class="n">ss</span> <span class="o">=</span> <span class="n">settings</span>
+    <span class="n">subsets</span> <span class="o">=</span> <span class="n">ss</span><span class="o">.</span><span class="n">subsets</span>
+    <span class="n">sorting</span> <span class="o">=</span> <span class="n">ss</span><span class="o">.</span><span class="n">sorting</span>
+    
+    <span class="n">proj_n</span> <span class="o">=</span> <span class="n">projections</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    
+    <span class="k">if</span> <span class="p">(</span><span class="n">sorting</span> <span class="o">==</span> <span class="s1">&#39;sequential&#39;</span><span class="p">):</span>
+    
+        <span class="c1"># Length of the block and the global index:</span>
+        <span class="n">step</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">proj_n</span> <span class="o">/</span> <span class="n">subsets</span><span class="p">))</span>
+    
+        <span class="n">last</span><span class="p">,</span> <span class="n">first</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span>
+        <span class="k">while</span> <span class="n">last</span> <span class="o">&lt;</span> <span class="n">proj_n</span><span class="p">:</span>
+            
+            <span class="n">last</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">proj_n</span><span class="p">,</span> <span class="n">first</span> <span class="o">+</span> <span class="n">step</span><span class="p">)</span>
+            
+            <span class="k">yield</span> <span class="nb">slice</span><span class="p">(</span><span class="n">first</span><span class="p">,</span> <span class="n">last</span><span class="p">)</span> 
+            <span class="n">first</span> <span class="o">=</span> <span class="n">last</span>
+    
+    <span class="k">elif</span> <span class="p">(</span><span class="n">sorting</span> <span class="o">==</span> <span class="s1">&#39;equidistant&#39;</span><span class="p">):</span>
+        
+        <span class="n">first</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">while</span> <span class="n">first</span> <span class="o">&lt;</span> <span class="n">subsets</span><span class="p">:</span>
+            
+            <span class="k">yield</span> <span class="nb">slice</span><span class="p">(</span><span class="n">first</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">subsets</span><span class="p">)</span> 
+            <span class="n">first</span> <span class="o">+=</span> <span class="mi">1</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s1">&#39;Unknown sorting!&#39;</span><span class="p">)</span>
+                   
+<span class="k">def</span> <span class="nf">_subset_generator_</span><span class="p">(</span><span class="n">projections</span><span class="p">,</span> <span class="n">volume</span><span class="p">,</span> <span class="n">geometry</span><span class="p">,</span> <span class="n">copy</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Generator of subsets for back-projection. Projections may be a single numpy array or a list of arrays.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">ss</span> <span class="o">=</span> <span class="n">settings</span>
+    <span class="n">mask</span> <span class="o">=</span> <span class="n">ss</span><span class="o">.</span><span class="n">pixel_mask</span>
+    
+    <span class="c1"># If projections are not list (single dataset) - make it a list:</span>
+    <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">projections</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">list</span><span class="p">:</span>
+        <span class="n">projections</span> <span class="o">=</span> <span class="p">[</span><span class="n">projections</span><span class="p">,]</span>
+    
+    <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">geometry</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">list</span><span class="p">:</span>
+        <span class="n">geometry</span> <span class="o">=</span> <span class="p">[</span><span class="n">geometry</span><span class="p">,]</span>
+    
+    <span class="c1"># Divide in subsets:   </span>
+    <span class="k">for</span> <span class="n">sl</span> <span class="ow">in</span> <span class="n">_slice_generator_</span><span class="p">(</span><span class="n">projections</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+        <span class="k">for</span> <span class="n">jj</span><span class="p">,</span> <span class="n">dataset</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">projections</span><span class="p">):</span>    
+            
+            <span class="n">subset</span> <span class="o">=</span> <span class="n">dataset</span><span class="p">[:,</span> <span class="n">sl</span><span class="p">,</span> <span class="p">:]</span>
+            <span class="k">if</span> <span class="n">copy</span><span class="p">:</span>
+                <span class="n">subset</span> <span class="o">=</span> <span class="n">subset</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+            
+            <span class="c1"># Apply mask:</span>
+            <span class="k">if</span> <span class="n">mask</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">mask</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span> 
+                    <span class="c1"># If mask is constant</span>
+                    <span class="n">subset</span> <span class="o">*=</span> <span class="n">mask</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="c1"># If mask is defined per angle:</span>
+                    <span class="n">subset</span> <span class="o">*=</span> <span class="n">mask</span><span class="p">[:,</span> <span class="n">sl</span><span class="p">,</span> <span class="p">:]</span>
+            
+            <span class="c1"># Initialize ASTRA geometries:</span>
+            <span class="n">proj_geom</span> <span class="o">=</span> <span class="n">geometry</span><span class="p">[</span><span class="n">jj</span><span class="p">]</span><span class="o">.</span><span class="n">astra_projection_geom</span><span class="p">(</span><span class="n">projections</span><span class="p">[</span><span class="n">jj</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">index</span> <span class="o">=</span> <span class="n">sl</span><span class="p">)</span>
+            <span class="n">vol_geom</span> <span class="o">=</span> <span class="n">geometry</span><span class="p">[</span><span class="n">jj</span><span class="p">]</span><span class="o">.</span><span class="n">astra_volume_geom</span><span class="p">(</span><span class="n">volume</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+     
+            <span class="k">yield</span> <span class="n">subset</span><span class="p">,</span> <span class="n">proj_geom</span><span class="p">,</span> <span class="n">vol_geom</span> 
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2018, Author
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

@@ -1,0 +1,614 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>flextomo.model &mdash; flextomo  documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> flextomo
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../readme.html">flextomo</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../modules.html">flextomo</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html">Changelog</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">flextomo</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+        
+      <li>flextomo.model</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for flextomo.model</h1><div class="highlight"><pre>
+<span></span><span class="ch">#!/usr/bin/env python3</span>
+<span class="c1"># -*- coding: utf-8 -*-</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">@author: kostenko</span>
+
+<span class="sd">This module can be used to simulate spectral effects and resolution/photon-count effects.</span>
+<span class="sd">NIST data is used (embedded in xraylib module) to simulate x-ray spectra of compounds</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="c1"># &gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt; Imports &gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span>
+<span class="kn">import</span> <span class="nn">xraylib</span>
+<span class="kn">import</span> <span class="nn">warnings</span>
+
+<span class="kn">from</span> <span class="nn">flextomo</span> <span class="k">import</span> <span class="n">projector</span>
+<span class="kn">from</span> <span class="nn">flexdata</span> <span class="k">import</span> <span class="n">display</span>
+
+<span class="c1"># &gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt; Constants &gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;</span>
+
+<span class="c1"># Some useful physical constants:</span>
+<span class="n">phys_const</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;c&#39;</span><span class="p">:</span> <span class="mi">299792458</span><span class="p">,</span> <span class="s1">&#39;h&#39;</span><span class="p">:</span> <span class="mf">6.62606896e-34</span><span class="p">,</span> <span class="s1">&#39;h_ev&#39;</span><span class="p">:</span> <span class="mf">4.13566733e-15</span><span class="p">,</span> <span class="s1">&#39;h_bar&#39;</span><span class="p">:</span> <span class="mf">1.054571628e-34</span><span class="p">,</span> <span class="s1">&#39;h_bar_ev&#39;</span><span class="p">:</span> <span class="mf">6.58211899e-16</span><span class="p">,</span>
+              <span class="s1">&#39;e&#39;</span><span class="p">:</span> <span class="mf">1.602176565e-19</span><span class="p">,</span> <span class="s1">&#39;Na&#39;</span><span class="p">:</span> <span class="mf">6.02214179e23</span><span class="p">,</span> <span class="s1">&#39;re&#39;</span><span class="p">:</span> <span class="mf">2.817940289458e-15</span><span class="p">,</span> <span class="s1">&#39;me&#39;</span><span class="p">:</span> <span class="mf">9.10938215e-31</span><span class="p">,</span> <span class="s1">&#39;me_ev&#39;</span><span class="p">:</span> <span class="mf">0.510998910e6</span><span class="p">}</span>
+<span class="n">const_unit</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;c&#39;</span><span class="p">:</span> <span class="s1">&#39;m/c&#39;</span><span class="p">,</span> <span class="s1">&#39;h&#39;</span><span class="p">:</span> <span class="s1">&#39;J*S&#39;</span><span class="p">,</span> <span class="s1">&#39;h_ev&#39;</span><span class="p">:</span> <span class="s1">&#39;e*Vs&#39;</span><span class="p">,</span> <span class="s1">&#39;h_bar&#39;</span><span class="p">:</span> <span class="s1">&#39;J*s&#39;</span><span class="p">,</span> <span class="s1">&#39;h_bar_ev&#39;</span><span class="p">:</span> <span class="s1">&#39;eV*s&#39;</span><span class="p">,</span>
+              <span class="s1">&#39;e&#39;</span><span class="p">:</span> <span class="s1">&#39;colomb&#39;</span><span class="p">,</span> <span class="s1">&#39;Na&#39;</span><span class="p">:</span> <span class="s1">&#39;1/mol&#39;</span><span class="p">,</span> <span class="s1">&#39;re&#39;</span><span class="p">:</span> <span class="s1">&#39;m&#39;</span><span class="p">,</span> <span class="s1">&#39;me&#39;</span><span class="p">:</span> <span class="s1">&#39;kg&#39;</span><span class="p">,</span> <span class="s1">&#39;me_ev&#39;</span><span class="p">:</span> <span class="s1">&#39;ev/c**2&#39;</span><span class="p">}</span>
+
+<span class="c1"># &gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt; Methods &gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;</span>
+
+<div class="viewcode-block" id="ctf"><a class="viewcode-back" href="../../flextomo.html#flextomo.model.ctf">[docs]</a><span class="k">def</span> <span class="nf">ctf</span><span class="p">(</span><span class="n">shape</span><span class="p">,</span> <span class="n">mode</span> <span class="o">=</span> <span class="s1">&#39;gaussian&#39;</span><span class="p">,</span> <span class="n">parameter</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Get a CTF (fft2(PSF)) of one of the following types: gaussian, dual_ctf, fresnel, TIE</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">        shape (list): shape of a projection image</span>
+<span class="sd">        mode (str): &#39;gaussian&#39; (blurr), &#39;dual_ctf&#39;, fresnel, TIE (phase contrast)</span>
+<span class="sd">        parameter (list / float): PSF/CTF parameters. </span>
+<span class="sd">                  For gaussian: [detector_pixel, sigma]</span>
+<span class="sd">                  For dual_ctf/tie: [detector_pixel, energy, src2obj, det2obj, alpha]</span>
+<span class="sd">                  For fresnel: [detector_pixel, energy, src2obj, det2obj]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Some constants...    </span>
+    <span class="n">h_bar_ev</span> <span class="o">=</span> <span class="mf">6.58211899e-16</span>
+    <span class="n">c</span><span class="o">=</span> <span class="mi">299792458</span>
+
+    <span class="k">if</span> <span class="n">mode</span> <span class="o">==</span> <span class="s1">&#39;gaussian&#39;</span><span class="p">:</span>
+        
+        <span class="c1"># Gaussian CTF:</span>
+        <span class="n">pixel</span> <span class="o">=</span> <span class="n">parameter</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">sigma</span> <span class="o">=</span> <span class="n">parameter</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+          
+        <span class="n">u</span> <span class="o">=</span> <span class="n">_w_space_</span><span class="p">(</span><span class="n">shape</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">pixel</span><span class="p">)</span>
+        <span class="n">v</span> <span class="o">=</span> <span class="n">_w_space_</span><span class="p">(</span><span class="n">shape</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">pixel</span><span class="p">)</span>
+        
+        <span class="n">ctf</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="p">((</span><span class="n">u</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="n">sigma</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">+</span> <span class="p">(</span><span class="n">v</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="p">:]</span> <span class="o">*</span> <span class="n">sigma</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span><span class="o">/</span><span class="mi">2</span><span class="p">)</span>
+        
+    <span class="k">elif</span> <span class="n">mode</span> <span class="o">==</span> <span class="s1">&#39;dual_ctf&#39;</span><span class="p">:</span>
+        
+        <span class="c1"># Dual CTF approximation phase contrast propagator:</span>
+        <span class="n">pixelsize</span> <span class="o">=</span> <span class="n">parameter</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">energy</span> <span class="o">=</span> <span class="n">parameter</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">r1</span> <span class="o">=</span> <span class="n">parameter</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+        <span class="n">r2</span> <span class="o">=</span> <span class="n">parameter</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span>
+        <span class="n">alpha</span> <span class="o">=</span> <span class="n">parameter</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span>
+        
+        <span class="c1"># Effective propagation distance:</span>
+        <span class="n">m</span> <span class="o">=</span> <span class="p">(</span><span class="n">r1</span> <span class="o">+</span> <span class="n">r2</span><span class="p">)</span> <span class="o">/</span> <span class="n">r1</span>
+        <span class="n">r_eff</span> <span class="o">=</span> <span class="n">r2</span> <span class="o">/</span> <span class="n">m</span>
+        
+        <span class="c1"># Wavenumber;</span>
+        <span class="n">k</span> <span class="o">=</span> <span class="n">energy</span> <span class="o">/</span> <span class="p">(</span><span class="n">h_bar_ev</span> <span class="o">*</span> <span class="n">c</span><span class="p">)</span>
+        
+        <span class="c1"># Frequency square:</span>
+        <span class="n">w2</span> <span class="o">=</span> <span class="n">_w2_space_</span><span class="p">(</span><span class="n">shape</span><span class="p">,</span> <span class="n">pixelsize</span><span class="p">)</span>
+        
+        <span class="c1">#return -2 * numpy.cos(w2 * r_eff / (2*k)) + 2 * (alpha) * numpy.sin(w2 * r_eff / (2*k))</span>
+        <span class="n">ctf</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">w2</span> <span class="o">*</span> <span class="n">r_eff</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">k</span><span class="p">))</span> <span class="o">-</span> <span class="p">(</span><span class="n">alpha</span><span class="p">)</span> <span class="o">*</span> <span class="n">numpy</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">w2</span> <span class="o">*</span> <span class="n">r_eff</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">k</span><span class="p">))</span>
+    
+    <span class="k">elif</span> <span class="n">mode</span> <span class="o">==</span> <span class="s1">&#39;fresnel&#39;</span><span class="p">:</span>
+        
+        <span class="c1"># Fresnel propagator for phase contrast simulation:</span>
+        <span class="n">pixelsize</span> <span class="o">=</span> <span class="n">parameter</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">energy</span> <span class="o">=</span> <span class="n">parameter</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">r1</span> <span class="o">=</span> <span class="n">parameter</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+        <span class="n">r2</span> <span class="o">=</span> <span class="n">parameter</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span>
+        
+        <span class="c1"># Effective propagation distance:</span>
+        <span class="n">m</span> <span class="o">=</span> <span class="p">(</span><span class="n">r1</span> <span class="o">+</span> <span class="n">r2</span><span class="p">)</span> <span class="o">/</span> <span class="n">r1</span>
+        <span class="n">r_eff</span> <span class="o">=</span> <span class="n">r2</span> <span class="o">/</span> <span class="n">m</span>
+        
+        <span class="c1"># Wavenumber;</span>
+        <span class="n">k</span> <span class="o">=</span> <span class="n">energy</span> <span class="o">/</span> <span class="p">(</span><span class="n">h_bar_ev</span> <span class="o">*</span> <span class="n">c</span><span class="p">)</span>
+        
+        <span class="c1"># Frequency square:</span>
+        <span class="n">w2</span> <span class="o">=</span> <span class="n">_w2_space_</span><span class="p">(</span><span class="n">shape</span><span class="p">,</span> <span class="n">pixelsize</span><span class="p">)</span>
+        
+        <span class="n">ctf</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="mi">1</span><span class="n">j</span> <span class="o">*</span> <span class="n">w2</span> <span class="o">*</span> <span class="n">r_eff</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">k</span><span class="p">))</span>
+        
+    <span class="k">elif</span> <span class="n">mode</span> <span class="o">==</span> <span class="s1">&#39;tie&#39;</span><span class="p">:</span>
+        
+        <span class="c1"># Transport of intensity equation approximation of phase contrast:</span>
+        <span class="n">pixelsize</span> <span class="o">=</span> <span class="n">parameter</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">energy</span> <span class="o">=</span> <span class="n">parameter</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">r1</span> <span class="o">=</span> <span class="n">parameter</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+        <span class="n">r2</span> <span class="o">=</span> <span class="n">parameter</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span>
+        <span class="n">alpha</span> <span class="o">=</span> <span class="n">parameter</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span>
+        
+        <span class="c1"># Effective propagation distance:</span>
+        <span class="n">m</span> <span class="o">=</span> <span class="p">(</span><span class="n">r1</span> <span class="o">+</span> <span class="n">r2</span><span class="p">)</span> <span class="o">/</span> <span class="n">r1</span>
+        <span class="n">r_eff</span> <span class="o">=</span> <span class="n">r2</span> <span class="o">/</span> <span class="n">m</span>
+        
+        <span class="c1"># Wavenumber;</span>
+        <span class="n">k</span> <span class="o">=</span> <span class="n">energy</span> <span class="o">/</span> <span class="p">(</span><span class="n">h_bar_ev</span> <span class="o">*</span> <span class="n">c</span><span class="p">)</span>
+        
+        <span class="c1"># Frequency square:</span>
+        <span class="n">w2</span> <span class="o">=</span> <span class="n">_w2_space_</span><span class="p">(</span><span class="n">shape</span><span class="p">,</span> <span class="n">pixelsize</span><span class="p">)</span>
+        
+        <span class="n">ctf</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">alpha</span> <span class="o">*</span> <span class="n">w2</span> <span class="o">*</span> <span class="n">r_eff</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">k</span><span class="p">)</span>
+       
+    <span class="k">return</span> <span class="n">numpy</span><span class="o">.</span><span class="n">fft</span><span class="o">.</span><span class="n">fftshift</span><span class="p">(</span><span class="n">ctf</span><span class="p">)</span></div>
+    
+<span class="k">def</span> <span class="nf">_w_space_</span><span class="p">(</span><span class="n">shape</span><span class="p">,</span> <span class="n">dim</span><span class="p">,</span> <span class="n">pixelsize</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Generate spatial frequencies along dimension dim.</span>
+<span class="sd">    &quot;&quot;&quot;</span>                   
+    <span class="c1"># Image dimentions:</span>
+    <span class="n">sz</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">shape</span><span class="p">)</span> <span class="o">*</span> <span class="n">pixelsize</span>
+        
+    <span class="c1"># Frequency:</span>
+    <span class="n">xx</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">shape</span><span class="p">[</span><span class="n">dim</span><span class="p">])</span> <span class="o">-</span> <span class="n">shape</span><span class="p">[</span><span class="n">dim</span><span class="p">]</span><span class="o">//</span><span class="mi">2</span>
+    <span class="k">return</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">numpy</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">xx</span> <span class="o">/</span> <span class="n">sz</span><span class="p">[</span><span class="n">dim</span><span class="p">]</span>
+
+<span class="k">def</span> <span class="nf">_w2_space_</span><span class="p">(</span><span class="n">shape</span><span class="p">,</span> <span class="n">pixelsize</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Generates the lambda*freq**2*R image that can be used to calculate phase propagator at distance R, photon wavelength lambda.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Frequency squared:</span>
+    <span class="n">u</span> <span class="o">=</span> <span class="n">_w_space_</span><span class="p">(</span><span class="n">shape</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">pixelsize</span><span class="p">)</span>
+    <span class="n">v</span> <span class="o">=</span> <span class="n">_w_space_</span><span class="p">(</span><span class="n">shape</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">pixelsize</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">u</span><span class="o">**</span><span class="mi">2</span><span class="p">)[:,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">+</span> <span class="p">(</span><span class="n">v</span><span class="o">**</span><span class="mi">2</span><span class="p">)[</span><span class="kc">None</span><span class="p">,</span> <span class="p">:]</span>
+            
+<div class="viewcode-block" id="apply_noise"><a class="viewcode-back" href="../../flextomo.html#flextomo.model.apply_noise">[docs]</a><span class="k">def</span> <span class="nf">apply_noise</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="n">mode</span> <span class="o">=</span> <span class="s1">&#39;poisson&#39;</span><span class="p">,</span> <span class="n">parameter</span> <span class="o">=</span> <span class="mi">1</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Add noise to the data.</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">        image (numpy.array): image to apply noise to</span>
+<span class="sd">        mode (str): poisson or normal</span>
+<span class="sd">        parameter (float): norm factor for poisson or a standard deviation    </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    
+    <span class="k">if</span> <span class="n">mode</span> <span class="o">==</span> <span class="s1">&#39;poisson&#39;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">numpy</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">poisson</span><span class="p">(</span><span class="n">image</span> <span class="o">*</span> <span class="n">parameter</span><span class="p">)</span>
+        
+    <span class="k">elif</span> <span class="n">mode</span> <span class="o">==</span> <span class="s1">&#39;normal&#39;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">numpy</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="n">parameter</span><span class="p">)</span>
+        
+    <span class="k">else</span><span class="p">:</span> 
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Me not recognize the mode! Use normal or poisson!&#39;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="effective_spectrum"><a class="viewcode-back" href="../../flextomo.html#flextomo.model.effective_spectrum">[docs]</a><span class="k">def</span> <span class="nf">effective_spectrum</span><span class="p">(</span><span class="n">energy</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">kv</span> <span class="o">=</span> <span class="mi">90</span><span class="p">,</span> <span class="n">filtr</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;material&#39;</span><span class="p">:</span><span class="s1">&#39;Cu&#39;</span><span class="p">,</span> <span class="s1">&#39;density&#39;</span><span class="p">:</span><span class="mi">8</span><span class="p">,</span> <span class="s1">&#39;thickness&#39;</span><span class="p">:</span><span class="mf">0.1</span><span class="p">},</span> <span class="n">detector</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;material&#39;</span><span class="p">:</span><span class="s1">&#39;Si&#39;</span><span class="p">,</span> <span class="s1">&#39;density&#39;</span><span class="p">:</span><span class="mi">5</span><span class="p">,</span> <span class="s1">&#39;thickness&#39;</span><span class="p">:</span><span class="mi">1</span><span class="p">}):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Generate an effective specturm of a CT scanner.</span>
+<span class="sd">    &quot;&quot;&quot;</span>            
+    
+    <span class="c1"># Energy range:</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">energy</span><span class="p">:</span>
+        <span class="n">energy</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">90</span><span class="p">,</span> <span class="mi">9</span><span class="p">)</span>
+        
+    <span class="c1"># Tube:</span>
+    <span class="n">spectrum</span> <span class="o">=</span> <span class="n">bremsstrahlung</span><span class="p">(</span><span class="n">energy</span><span class="p">,</span> <span class="n">kv</span><span class="p">)</span> 
+    
+    <span class="c1"># Filter:</span>
+    <span class="k">if</span> <span class="n">filtr</span><span class="p">:</span>
+        <span class="n">spectrum</span> <span class="o">*=</span> <span class="n">total_transmission</span><span class="p">(</span><span class="n">energy</span><span class="p">,</span> <span class="n">filtr</span><span class="p">[</span><span class="s1">&#39;material&#39;</span><span class="p">],</span> <span class="n">rho</span> <span class="o">=</span> <span class="n">filtr</span><span class="p">[</span><span class="s1">&#39;density&#39;</span><span class="p">],</span> <span class="n">thickness</span> <span class="o">=</span> <span class="n">filtr</span><span class="p">[</span><span class="s1">&#39;thickness&#39;</span><span class="p">])</span>
+    
+    <span class="c1"># Detector:</span>
+    <span class="k">if</span> <span class="n">detector</span><span class="p">:</span>    
+        <span class="n">spectrum</span> <span class="o">*=</span> <span class="n">scintillator_efficiency</span><span class="p">(</span><span class="n">energy</span><span class="p">,</span> <span class="n">detector</span><span class="p">[</span><span class="s1">&#39;material&#39;</span><span class="p">],</span> <span class="n">rho</span> <span class="o">=</span> <span class="n">detector</span><span class="p">[</span><span class="s1">&#39;density&#39;</span><span class="p">],</span> <span class="n">thickness</span> <span class="o">=</span> <span class="n">detector</span><span class="p">[</span><span class="s1">&#39;thickness&#39;</span><span class="p">])</span>
+    
+    <span class="c1"># Normalize:</span>
+    <span class="n">spectrum</span> <span class="o">/=</span> <span class="p">(</span><span class="n">energy</span><span class="o">*</span><span class="n">spectrum</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+    
+    <span class="k">return</span> <span class="n">energy</span><span class="p">,</span> <span class="n">spectrum</span></div>
+    
+<div class="viewcode-block" id="spectralize"><a class="viewcode-back" href="../../flextomo.html#flextomo.model.spectralize">[docs]</a><span class="k">def</span> <span class="nf">spectralize</span><span class="p">(</span><span class="n">proj</span><span class="p">,</span> <span class="n">kv</span> <span class="o">=</span> <span class="mi">90</span><span class="p">,</span> <span class="n">n_phot</span> <span class="o">=</span> <span class="mf">1e8</span><span class="p">,</span> <span class="n">specimen</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;material&#39;</span><span class="p">:</span><span class="s1">&#39;Al&#39;</span><span class="p">,</span> <span class="s1">&#39;density&#39;</span><span class="p">:</span> <span class="mf">2.7</span><span class="p">},</span> <span class="n">filtr</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;material&#39;</span><span class="p">:</span><span class="s1">&#39;Cu&#39;</span><span class="p">,</span> <span class="s1">&#39;density&#39;</span><span class="p">:</span><span class="mi">8</span><span class="p">,</span> <span class="s1">&#39;thickness&#39;</span><span class="p">:</span><span class="mf">0.1</span><span class="p">},</span> <span class="n">detector</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;material&#39;</span><span class="p">:</span><span class="s1">&#39;Si&#39;</span><span class="p">,</span> <span class="s1">&#39;density&#39;</span><span class="p">:</span><span class="mi">5</span><span class="p">,</span> <span class="s1">&#39;thickness&#39;</span><span class="p">:</span><span class="mi">1</span><span class="p">}):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Simulate spectral data.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    
+    <span class="c1"># Generate spectrum:</span>
+    <span class="n">energy</span><span class="p">,</span> <span class="n">spectrum</span> <span class="o">=</span> <span class="n">effective_spectrum</span><span class="p">(</span><span class="n">kv</span><span class="p">,</span> <span class="n">filtr</span><span class="p">,</span> <span class="n">detector</span><span class="p">)</span>
+    
+    <span class="c1"># Get the material refraction index:</span>
+    <span class="n">mu</span> <span class="o">=</span> <span class="n">linear_attenuation</span><span class="p">(</span><span class="n">energy</span><span class="p">,</span> <span class="n">specimen</span><span class="p">[</span><span class="s1">&#39;material&#39;</span><span class="p">],</span> <span class="n">specimen</span><span class="p">[</span><span class="s1">&#39;density&#39;</span><span class="p">])</span>
+     
+    <span class="c1"># Display:</span>
+    <span class="n">display</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">energy</span><span class="p">,</span> <span class="n">spectrum</span><span class="p">,</span> <span class="n">title</span> <span class="o">=</span> <span class="s1">&#39;Spectrum&#39;</span><span class="p">)</span> 
+    <span class="n">display</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">energy</span><span class="p">,</span> <span class="n">mu</span><span class="p">,</span> <span class="n">title</span> <span class="o">=</span> <span class="s1">&#39;Linear attenuation&#39;</span><span class="p">)</span> 
+        
+    <span class="c1"># Simulate intensity images:</span>
+    <span class="n">counts</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">proj</span><span class="p">)</span>
+        
+    <span class="k">for</span> <span class="n">ii</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">energy</span><span class="p">)):</span>
+        
+        <span class="c1"># Monochromatic component:</span>
+        <span class="n">monochrome</span> <span class="o">=</span> <span class="n">spectrum</span><span class="p">[</span><span class="n">ii</span><span class="p">]</span> <span class="o">*</span> <span class="n">numpy</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">proj</span> <span class="o">*</span> <span class="n">mu</span><span class="p">[</span><span class="n">ii</span><span class="p">])</span>
+        <span class="n">monochrome</span> <span class="o">=</span> <span class="n">apply_noise</span><span class="p">(</span><span class="n">monochrome</span><span class="p">,</span> <span class="s1">&#39;poisson&#39;</span><span class="p">,</span> <span class="n">n_phot</span><span class="p">)</span> <span class="o">/</span> <span class="n">n_phot</span>    
+        
+        <span class="c1"># Detector response is assumed to be proportional to E</span>
+        <span class="n">counts</span> <span class="o">+=</span> <span class="n">energy</span><span class="p">[</span><span class="n">ii</span><span class="p">]</span> <span class="o">*</span> <span class="n">monochrome</span>
+    
+    <span class="k">return</span> <span class="n">counts</span></div>
+
+<div class="viewcode-block" id="forward_spectral"><a class="viewcode-back" href="../../flextomo.html#flextomo.model.forward_spectral">[docs]</a><span class="k">def</span> <span class="nf">forward_spectral</span><span class="p">(</span><span class="n">vol</span><span class="p">,</span> <span class="n">proj</span><span class="p">,</span> <span class="n">geometry</span><span class="p">,</span> <span class="n">materials</span><span class="p">,</span> <span class="n">energy</span><span class="p">,</span> <span class="n">spectrum</span><span class="p">,</span> <span class="n">n_phot</span> <span class="o">=</span> <span class="mf">1e8</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Simulate spectral data using labeled volume.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    
+    <span class="n">max_label</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">vol</span><span class="o">.</span><span class="n">max</span><span class="p">())</span>
+    
+    <span class="k">if</span> <span class="n">max_label</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">materials</span><span class="p">):</span> <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Number of materials is not the same as the number of labels in the volume!&#39;</span><span class="p">)</span>
+
+    <span class="c1"># Normalize spectrum:</span>
+    <span class="n">spectrum</span> <span class="o">/=</span> <span class="p">(</span><span class="n">spectrum</span> <span class="o">*</span> <span class="n">energy</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+    
+    <span class="c1"># Simulate intensity images:</span>
+    <span class="n">lab_proj</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">jj</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">max_label</span><span class="p">):</span>
+        
+        <span class="c1"># Forward project:    </span>
+        <span class="n">proj_j</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">proj</span><span class="p">)</span>
+        <span class="n">vol_j</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">float32</span><span class="p">(</span><span class="n">vol</span> <span class="o">==</span> <span class="p">(</span><span class="n">jj</span><span class="o">+</span><span class="mi">1</span><span class="p">))</span>
+        <span class="n">projector</span><span class="o">.</span><span class="n">forwardproject</span><span class="p">(</span><span class="n">proj_j</span><span class="p">,</span> <span class="n">vol_j</span><span class="p">,</span> <span class="n">geometry</span><span class="p">)</span>
+        
+        <span class="n">lab_proj</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">proj_j</span><span class="p">)</span>
+        
+    <span class="k">for</span> <span class="n">ii</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">energy</span><span class="p">)):</span>
+        
+        <span class="c1"># Monochromatic components:</span>
+        <span class="n">monochrome</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">proj</span><span class="p">)</span>
+        
+        <span class="k">for</span> <span class="n">jj</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">max_label</span><span class="p">):</span>
+            
+            <span class="n">mu</span> <span class="o">=</span> <span class="n">linear_attenuation</span><span class="p">(</span><span class="n">energy</span><span class="p">,</span> <span class="n">materials</span><span class="p">[</span><span class="n">jj</span><span class="p">][</span><span class="s1">&#39;material&#39;</span><span class="p">],</span> <span class="n">materials</span><span class="p">[</span><span class="n">jj</span><span class="p">][</span><span class="s1">&#39;density&#39;</span><span class="p">])</span>
+    
+            <span class="n">monochrome</span> <span class="o">*=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">lab_proj</span><span class="p">[</span><span class="n">jj</span><span class="p">]</span> <span class="o">*</span> <span class="n">mu</span><span class="p">[</span><span class="n">ii</span><span class="p">])</span>
+            
+        <span class="n">monochrome</span> <span class="o">*=</span> <span class="n">spectrum</span><span class="p">[</span><span class="n">ii</span><span class="p">]</span>
+        <span class="n">monochrome</span> <span class="o">=</span> <span class="n">apply_noise</span><span class="p">(</span><span class="n">monochrome</span><span class="p">,</span> <span class="s1">&#39;poisson&#39;</span><span class="p">,</span> <span class="n">n_phot</span><span class="p">)</span> <span class="o">/</span> <span class="n">n_phot</span>    
+
+        <span class="c1"># Detector response is assumed to be proportional to E</span>
+        <span class="n">proj</span> <span class="o">+=</span> <span class="n">energy</span><span class="p">[</span><span class="n">ii</span><span class="p">]</span> <span class="o">*</span> <span class="n">monochrome</span></div>
+        
+<div class="viewcode-block" id="material_refraction"><a class="viewcode-back" href="../../flextomo.html#flextomo.model.material_refraction">[docs]</a><span class="k">def</span> <span class="nf">material_refraction</span><span class="p">(</span><span class="n">energy</span><span class="p">,</span> <span class="n">compound</span><span class="p">,</span> <span class="n">rho</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;    </span>
+<span class="sd">    Calculate complex refrative index of the material taking</span>
+<span class="sd">    into account it&#39;s density. </span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        compound (str): compound chemical formula</span>
+<span class="sd">        rho (float): density in g / cm3</span>
+<span class="sd">        energy (numpy.array): energy in KeV   </span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        float: refraction index in [1/mm]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="nb">cmp</span> <span class="o">=</span> <span class="n">xraylib</span><span class="o">.</span><span class="n">CompoundParser</span><span class="p">(</span><span class="n">compound</span><span class="p">)</span>
+
+    <span class="c1"># Compute ration of Z and A:</span>
+    <span class="n">z</span> <span class="o">=</span> <span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="nb">cmp</span><span class="p">[</span><span class="s1">&#39;Elements&#39;</span><span class="p">]))</span>
+    <span class="n">a</span> <span class="o">=</span> <span class="p">[</span><span class="n">xraylib</span><span class="o">.</span><span class="n">AtomicWeight</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">cmp</span><span class="p">[</span><span class="s1">&#39;Elements&#39;</span><span class="p">]]</span>
+
+    <span class="n">za</span> <span class="o">=</span> <span class="p">((</span><span class="n">z</span> <span class="o">/</span> <span class="n">a</span><span class="p">)</span> <span class="o">*</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="nb">cmp</span><span class="p">[</span><span class="s1">&#39;massFractions&#39;</span><span class="p">]))</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+
+    <span class="c1"># Electron density of the material:</span>
+    <span class="n">Na</span> <span class="o">=</span> <span class="n">phys_const</span><span class="p">[</span><span class="s1">&#39;Na&#39;</span><span class="p">]</span>
+    <span class="n">rho_e</span> <span class="o">=</span> <span class="n">rho</span> <span class="o">*</span> <span class="n">za</span> <span class="o">*</span> <span class="n">Na</span>
+
+    <span class="c1"># Attenuation:</span>
+    <span class="n">mu</span> <span class="o">=</span> <span class="n">mass_attenuation</span><span class="p">(</span><span class="n">energy</span><span class="p">,</span> <span class="n">compound</span><span class="p">)</span>
+
+    <span class="c1"># Phase:</span>
+    <span class="n">wavelength</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">numpy</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> \
+        <span class="p">(</span><span class="n">phys_const</span><span class="p">[</span><span class="s1">&#39;h_bar_ev&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">phys_const</span><span class="p">[</span><span class="s1">&#39;c&#39;</span><span class="p">])</span> <span class="o">/</span> <span class="n">energy</span> <span class="o">*</span> <span class="mi">10</span>
+
+    <span class="c1"># TODO: check this against phantoms.m:</span>
+    <span class="n">phi</span> <span class="o">=</span> <span class="n">rho_e</span> <span class="o">*</span> <span class="n">phys_const</span><span class="p">[</span><span class="s1">&#39;re&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">wavelength</span>
+
+    <span class="c1"># Refraction index (per mm)</span>
+    <span class="k">return</span> <span class="n">rho</span> <span class="o">*</span> <span class="p">(</span><span class="n">mu</span> <span class="o">/</span> <span class="mi">2</span> <span class="o">-</span> <span class="mi">1</span><span class="n">j</span> <span class="o">*</span> <span class="n">phi</span><span class="p">)</span> <span class="o">/</span> <span class="mi">10</span></div>
+
+<div class="viewcode-block" id="mass_attenuation"><a class="viewcode-back" href="../../flextomo.html#flextomo.model.mass_attenuation">[docs]</a><span class="k">def</span> <span class="nf">mass_attenuation</span><span class="p">(</span><span class="n">energy</span><span class="p">,</span> <span class="n">compound</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Total X-ray absorption for a given compound in cm2g. Energy is given in KeV</span>
+<span class="sd">    &#39;&#39;&#39;</span>   
+    <span class="c1"># xraylib might complain about types:</span>
+    <span class="n">energy</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">double</span><span class="p">(</span><span class="n">energy</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">numpy</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="n">energy</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">xraylib</span><span class="o">.</span><span class="n">CS_Total_CP</span><span class="p">(</span><span class="n">compound</span><span class="p">,</span> <span class="n">energy</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">xraylib</span><span class="o">.</span><span class="n">CS_Total_CP</span><span class="p">(</span><span class="n">compound</span><span class="p">,</span> <span class="n">e</span><span class="p">)</span> <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">energy</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="linear_attenuation"><a class="viewcode-back" href="../../flextomo.html#flextomo.model.linear_attenuation">[docs]</a><span class="k">def</span> <span class="nf">linear_attenuation</span><span class="p">(</span><span class="n">energy</span><span class="p">,</span> <span class="n">compound</span><span class="p">,</span> <span class="n">rho</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Total X-ray absorption for a given compound in 1/mm. Energy is given in KeV</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="c1"># xraylib might complain about types:</span>
+    <span class="n">energy</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">double</span><span class="p">(</span><span class="n">energy</span><span class="p">)</span>
+
+    <span class="c1"># unit: [1/mm]</span>
+    <span class="k">return</span> <span class="n">rho</span> <span class="o">*</span> <span class="n">mass_attenuation</span><span class="p">(</span><span class="n">energy</span><span class="p">,</span> <span class="n">compound</span><span class="p">)</span> <span class="o">/</span> <span class="mi">10</span></div>
+
+
+<div class="viewcode-block" id="compton"><a class="viewcode-back" href="../../flextomo.html#flextomo.model.compton">[docs]</a><span class="k">def</span> <span class="nf">compton</span><span class="p">(</span><span class="n">energy</span><span class="p">,</span> <span class="n">compound</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Compton scaterring crossection for a given compound in cm2g. Energy is given in KeV</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    
+    <span class="c1"># xraylib might complain about types:</span>
+    <span class="n">energy</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">double</span><span class="p">(</span><span class="n">energy</span><span class="p">)</span>
+    <span class="kn">import</span> <span class="nn">xraylib</span>
+    
+    <span class="k">if</span> <span class="n">numpy</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="n">energy</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">xraylib</span><span class="o">.</span><span class="n">CS_Compt_CP</span><span class="p">(</span><span class="n">compound</span><span class="p">,</span> <span class="n">energy</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">xraylib</span><span class="o">.</span><span class="n">CS_Compt_CP</span><span class="p">(</span><span class="n">compound</span><span class="p">,</span> <span class="n">e</span><span class="p">)</span> <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">energy</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="rayleigh"><a class="viewcode-back" href="../../flextomo.html#flextomo.model.rayleigh">[docs]</a><span class="k">def</span> <span class="nf">rayleigh</span><span class="p">(</span><span class="n">energy</span><span class="p">,</span> <span class="n">compound</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Compton scaterring crossection for a given compound in cm2g. Energy is given in KeV</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="kn">import</span> <span class="nn">xraylib</span>
+    
+    <span class="c1"># xraylib might complain about types:</span>
+    <span class="n">energy</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">double</span><span class="p">(</span><span class="n">energy</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">numpy</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="n">energy</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">xraylib</span><span class="o">.</span><span class="n">CS_Rayl_CP</span><span class="p">(</span><span class="n">compound</span><span class="p">,</span> <span class="n">energy</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">xraylib</span><span class="o">.</span><span class="n">CS_Rayl_CP</span><span class="p">(</span><span class="n">compound</span><span class="p">,</span> <span class="n">e</span><span class="p">)</span> <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">energy</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="photoelectric"><a class="viewcode-back" href="../../flextomo.html#flextomo.model.photoelectric">[docs]</a><span class="k">def</span> <span class="nf">photoelectric</span><span class="p">(</span><span class="n">energy</span><span class="p">,</span> <span class="n">compound</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Photoelectric effect for a given compound in cm2g. Energy is given in KeV</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="kn">import</span> <span class="nn">xraylib</span>
+    
+    <span class="c1"># xraylib might complain about types:</span>
+    <span class="n">energy</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">double</span><span class="p">(</span><span class="n">energy</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">numpy</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="n">energy</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">xraylib</span><span class="o">.</span><span class="n">CS_Photo_CP</span><span class="p">(</span><span class="n">compound</span><span class="p">,</span> <span class="n">energy</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">xraylib</span><span class="o">.</span><span class="n">CS_Photo_CP</span><span class="p">(</span><span class="n">compound</span><span class="p">,</span> <span class="n">e</span><span class="p">)</span> <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">energy</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="scintillator_efficiency"><a class="viewcode-back" href="../../flextomo.html#flextomo.model.scintillator_efficiency">[docs]</a><span class="k">def</span> <span class="nf">scintillator_efficiency</span><span class="p">(</span><span class="n">energy</span><span class="p">,</span> <span class="n">compound</span><span class="o">=</span><span class="s1">&#39;BaFBr&#39;</span><span class="p">,</span> <span class="n">rho</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">thickness</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Generate QDE of a detector (scintillator). Units: KeV, g/cm3, mm.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="c1"># Attenuation by the photoelectric effect:</span>
+    <span class="n">spectrum</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">numpy</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span> <span class="n">thickness</span> <span class="o">*</span> <span class="n">rho</span> <span class="o">*</span>
+                             <span class="n">photoelectric</span><span class="p">(</span><span class="n">energy</span><span class="p">,</span> <span class="n">compound</span><span class="p">)</span> <span class="o">/</span> <span class="mi">10</span><span class="p">)</span>
+
+    <span class="c1"># Normalize:</span>
+    <span class="k">return</span> <span class="n">spectrum</span> <span class="o">/</span> <span class="n">spectrum</span><span class="o">.</span><span class="n">max</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="total_transmission"><a class="viewcode-back" href="../../flextomo.html#flextomo.model.total_transmission">[docs]</a><span class="k">def</span> <span class="nf">total_transmission</span><span class="p">(</span><span class="n">energy</span><span class="p">,</span> <span class="n">compound</span><span class="p">,</span> <span class="n">rho</span><span class="p">,</span> <span class="n">thickness</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Compute fraction of x-rays transmitted through the filter. </span>
+<span class="sd">    Units: KeV, g/cm3, mm.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="c1"># Attenuation by the photoelectric effect:</span>
+    <span class="k">return</span> <span class="n">numpy</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">linear_attenuation</span><span class="p">(</span><span class="n">energy</span><span class="p">,</span> <span class="n">compound</span><span class="p">,</span> <span class="n">rho</span><span class="p">)</span> <span class="o">*</span> <span class="n">thickness</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="bremsstrahlung"><a class="viewcode-back" href="../../flextomo.html#flextomo.model.bremsstrahlung">[docs]</a><span class="k">def</span> <span class="nf">bremsstrahlung</span><span class="p">(</span><span class="n">energy</span><span class="p">,</span> <span class="n">energy_max</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Simple bremstrahlung model (Kramer formula). Emax</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">if</span> <span class="n">energy_max</span> <span class="o">&lt;</span> <span class="mi">10</span><span class="p">:</span>
+        
+        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s1">&#39;Maximum energy in the Kramer formula is too low. Setting to 100kV&#39;</span><span class="p">)</span>
+        <span class="n">energy_max</span> <span class="o">=</span> <span class="mi">100</span>
+        
+    <span class="c1"># Kramer:    </span>
+    <span class="n">spectrum</span> <span class="o">=</span> <span class="n">energy</span> <span class="o">*</span> <span class="p">(</span><span class="n">energy_max</span> <span class="o">-</span> <span class="n">energy</span><span class="p">)</span>
+    <span class="n">spectrum</span><span class="p">[</span><span class="n">spectrum</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="c1"># Normalize:</span>
+    <span class="k">return</span> <span class="n">spectrum</span> <span class="o">/</span> <span class="n">spectrum</span><span class="o">.</span><span class="n">max</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="gaussian_spectrum"><a class="viewcode-back" href="../../flextomo.html#flextomo.model.gaussian_spectrum">[docs]</a><span class="k">def</span> <span class="nf">gaussian_spectrum</span><span class="p">(</span><span class="n">energy</span><span class="p">,</span> <span class="n">energy_mean</span><span class="p">,</span> <span class="n">energy_sigma</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Generates gaussian-like spectrum with given mean and STD.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">return</span> <span class="n">numpy</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="p">(</span><span class="n">energy</span> <span class="o">-</span> <span class="n">energy_mean</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">energy_sigma</span><span class="o">**</span><span class="mi">2</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="nist_names"><a class="viewcode-back" href="../../flextomo.html#flextomo.model.nist_names">[docs]</a><span class="k">def</span> <span class="nf">nist_names</span><span class="p">():</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Get a list of registered compound names understood by nist</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="kn">import</span> <span class="nn">xraylib</span>
+    
+    <span class="k">return</span> <span class="n">xraylib</span><span class="o">.</span><span class="n">GetCompoundDataNISTList</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="find_nist_name"><a class="viewcode-back" href="../../flextomo.html#flextomo.model.find_nist_name">[docs]</a><span class="k">def</span> <span class="nf">find_nist_name</span><span class="p">(</span><span class="n">compound_name</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Get physical properties of one of the compounds registered in nist database</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="kn">import</span> <span class="nn">xraylib</span>
+    
+    <span class="k">return</span> <span class="n">xraylib</span><span class="o">.</span><span class="n">GetCompoundDataNISTByName</span><span class="p">(</span><span class="n">compound_name</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="parse_compound"><a class="viewcode-back" href="../../flextomo.html#flextomo.model.parse_compound">[docs]</a><span class="k">def</span> <span class="nf">parse_compound</span><span class="p">(</span><span class="n">compund</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Parse chemical formula</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="kn">import</span> <span class="nn">xraylib</span>
+    
+    <span class="k">return</span> <span class="n">xraylib</span><span class="o">.</span><span class="n">CompoundParser</span><span class="p">(</span><span class="n">compund</span><span class="p">)</span></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2018, Author
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

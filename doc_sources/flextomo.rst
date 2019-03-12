@@ -4,6 +4,14 @@ flextomo package
 Submodules
 ----------
 
+flextomo.model module
+---------------------
+
+.. automodule:: flextomo.model
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 flextomo.phantom module
 -----------------------
 
@@ -12,10 +20,10 @@ flextomo.phantom module
     :undoc-members:
     :show-inheritance:
 
-flextomo.project module
------------------------
+flextomo.projector module
+-------------------------
 
-.. automodule:: flextomo.project
+.. automodule:: flextomo.projector
     :members:
     :undoc-members:
     :show-inheritance:

@@ -119,7 +119,7 @@ def SIRT( projections, volume, geometry, iterations):
     _pbar_close_(pbar)
                      
     if rnorms:   
-         display.plot(rnorms, semilogy = True, title = 'Resudual L2')   
+         display.plot2d(rnorms, semilogy = True, title = 'Resudual L2')   
          
 def PWLS(projections, volume, geometry, iterations):
     """

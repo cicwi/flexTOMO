@@ -18,32 +18,34 @@
   
 
   
+  <script type="text/javascript" src="_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script type="text/javascript" src="_static/jquery.js"></script>
+        <script type="text/javascript" src="_static/underscore.js"></script>
+        <script type="text/javascript" src="_static/doctools.js"></script>
+        <script type="text/javascript" src="_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
 
-  
-  
     
 
   
-
   <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <link rel="index" title="Index" href="#" />
     <link rel="search" title="Search" href="search.html" /> 
-
-  
-  <script src="_static/js/modernizr.min.js"></script>
-
 </head>
 
 <body class="wy-body-for-nav">
 
    
   <div class="wy-grid-for-nav">
-
     
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
-        <div class="wy-side-nav-search">
+        <div class="wy-side-nav-search" >
           
 
           
@@ -152,11 +154,17 @@
  | <a href="#C"><strong>C</strong></a>
  | <a href="#E"><strong>E</strong></a>
  | <a href="#F"><strong>F</strong></a>
+ | <a href="#G"><strong>G</strong></a>
  | <a href="#I"><strong>I</strong></a>
  | <a href="#L"><strong>L</strong></a>
  | <a href="#M"><strong>M</strong></a>
+ | <a href="#N"><strong>N</strong></a>
+ | <a href="#P"><strong>P</strong></a>
  | <a href="#R"><strong>R</strong></a>
  | <a href="#S"><strong>S</strong></a>
+ | <a href="#T"><strong>T</strong></a>
+ | <a href="#U"><strong>U</strong></a>
+ | <a href="#V"><strong>V</strong></a>
  
 </div>
 <h2 id="A">A</h2>
@@ -165,12 +173,22 @@
       <li><a href="flextomo.html#flextomo.phantom.abstract_nudes">abstract_nudes() (in module flextomo.phantom)</a>
 </li>
   </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="flextomo.html#flextomo.model.apply_noise">apply_noise() (in module flextomo.model)</a>
+</li>
+  </ul></td>
 </tr></table>
 
 <h2 id="B">B</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="flextomo.html#flextomo.project.backproject">backproject() (in module flextomo.project)</a>
+      <li><a href="flextomo.html#flextomo.projector.backproject">backproject() (in module flextomo.projector)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="flextomo.html#flextomo.projector.settings.bounds">bounds (flextomo.projector.settings attribute)</a>
+</li>
+      <li><a href="flextomo.html#flextomo.model.bremsstrahlung">bremsstrahlung() (in module flextomo.model)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -180,11 +198,11 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="flextomo.html#flextomo.phantom.checkers">checkers() (in module flextomo.phantom)</a>
 </li>
-      <li><a href="flextomo.html#flextomo.project.CPLS">CPLS() (in module flextomo.project)</a>
+      <li><a href="flextomo.html#flextomo.model.compton">compton() (in module flextomo.model)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="flextomo.html#flextomo.project.CPLS_step">CPLS_step() (in module flextomo.project)</a>
+      <li><a href="flextomo.html#flextomo.model.ctf">ctf() (in module flextomo.model)</a>
 </li>
       <li><a href="flextomo.html#flextomo.phantom.cuboid">cuboid() (in module flextomo.phantom)</a>
 </li>
@@ -196,11 +214,13 @@
 <h2 id="E">E</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="flextomo.html#flextomo.project.EM">EM() (in module flextomo.project)</a>
+      <li><a href="flextomo.html#flextomo.model.effective_spectrum">effective_spectrum() (in module flextomo.model)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="flextomo.html#flextomo.project.EM_step">EM_step() (in module flextomo.project)</a>
+      <li><a href="flextomo.html#flextomo.projector.EM">EM() (in module flextomo.projector)</a>
+</li>
+      <li><a href="flextomo.html#flextomo.projector.em_update">em_update() (in module flextomo.projector)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -208,21 +228,37 @@
 <h2 id="F">F</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="flextomo.html#flextomo.project.FDK">FDK() (in module flextomo.project)</a>
+      <li><a href="flextomo.html#flextomo.projector.FDK">FDK() (in module flextomo.projector)</a>
 </li>
-      <li><a href="flextomo.html#flextomo.project.FISTA">FISTA() (in module flextomo.project)</a>
+      <li><a href="flextomo.html#flextomo.model.find_nist_name">find_nist_name() (in module flextomo.model)</a>
 </li>
-      <li><a href="flextomo.html#flextomo.project.FISTA_step">FISTA_step() (in module flextomo.project)</a>
+      <li><a href="flextomo.html#flextomo.projector.FISTA">FISTA() (in module flextomo.projector)</a>
+</li>
+      <li><a href="flextomo.html#flextomo.projector.fista_update">fista_update() (in module flextomo.projector)</a>
+</li>
+      <li><a href="flextomo.html#module-flextomo">flextomo (module)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="flextomo.html#module-flextomo">flextomo (module)</a>
+      <li><a href="flextomo.html#module-flextomo.model">flextomo.model (module)</a>
 </li>
       <li><a href="flextomo.html#module-flextomo.phantom">flextomo.phantom (module)</a>
 </li>
-      <li><a href="flextomo.html#module-flextomo.project">flextomo.project (module)</a>
+      <li><a href="flextomo.html#module-flextomo.projector">flextomo.projector (module)</a>
 </li>
-      <li><a href="flextomo.html#flextomo.project.forwardproject">forwardproject() (in module flextomo.project)</a>
+      <li><a href="flextomo.html#flextomo.model.forward_spectral">forward_spectral() (in module flextomo.model)</a>
+</li>
+      <li><a href="flextomo.html#flextomo.projector.forwardproject">forwardproject() (in module flextomo.projector)</a>
+</li>
+      <li><a href="flextomo.html#flextomo.projector.settings.fourier_filter">fourier_filter (flextomo.projector.settings attribute)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="G">G</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="flextomo.html#flextomo.model.gaussian_spectrum">gaussian_spectrum() (in module flextomo.model)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -230,7 +266,7 @@
 <h2 id="I">I</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="flextomo.html#flextomo.project.init_volume">init_volume() (in module flextomo.project)</a>
+      <li><a href="flextomo.html#flextomo.projector.init_volume">init_volume() (in module flextomo.projector)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -238,11 +274,13 @@
 <h2 id="L">L</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="flextomo.html#flextomo.project.L1_step">L1_step() (in module flextomo.project)</a>
+      <li><a href="flextomo.html#flextomo.projector.l1_update">l1_update() (in module flextomo.projector)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="flextomo.html#flextomo.project.L2_step">L2_step() (in module flextomo.project)</a>
+      <li><a href="flextomo.html#flextomo.projector.l2_update">l2_update() (in module flextomo.projector)</a>
+</li>
+      <li><a href="flextomo.html#flextomo.model.linear_attenuation">linear_attenuation() (in module flextomo.model)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -250,11 +288,43 @@
 <h2 id="M">M</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="flextomo.html#flextomo.project.MULTI_PWLS">MULTI_PWLS() (in module flextomo.project)</a>
+      <li><a href="flextomo.html#flextomo.model.mass_attenuation">mass_attenuation() (in module flextomo.model)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="flextomo.html#flextomo.project.MULTI_SIRT">MULTI_SIRT() (in module flextomo.project)</a>
+      <li><a href="flextomo.html#flextomo.model.material_refraction">material_refraction() (in module flextomo.model)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="N">N</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="flextomo.html#flextomo.model.nist_names">nist_names() (in module flextomo.model)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="P">P</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="flextomo.html#flextomo.model.parse_compound">parse_compound() (in module flextomo.model)</a>
+</li>
+      <li><a href="flextomo.html#flextomo.model.photoelectric">photoelectric() (in module flextomo.model)</a>
+</li>
+      <li><a href="flextomo.html#flextomo.projector.settings.pixel_mask">pixel_mask (flextomo.projector.settings attribute)</a>
+</li>
+      <li><a href="flextomo.html#flextomo.projector.settings.poisson">poisson (flextomo.projector.settings attribute)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="flextomo.html#flextomo.projector.settings.preview">preview (flextomo.projector.settings attribute)</a>
+</li>
+      <li><a href="flextomo.html#flextomo.projector.settings.progress_bar">progress_bar (flextomo.projector.settings attribute)</a>
+</li>
+      <li><a href="flextomo.html#flextomo.projector.PWLS">PWLS() (in module flextomo.projector)</a>
+</li>
+      <li><a href="flextomo.html#flextomo.projector.pwls_update">pwls_update() (in module flextomo.projector)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -265,18 +335,58 @@
       <li><a href="flextomo.html#flextomo.phantom.random_spheroids">random_spheroids() (in module flextomo.phantom)</a>
 </li>
   </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="flextomo.html#flextomo.model.rayleigh">rayleigh() (in module flextomo.model)</a>
+</li>
+  </ul></td>
 </tr></table>
 
 <h2 id="S">S</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="flextomo.html#flextomo.project.SIRT">SIRT() (in module flextomo.project)</a>
+      <li><a href="flextomo.html#flextomo.model.scintillator_efficiency">scintillator_efficiency() (in module flextomo.model)</a>
+</li>
+      <li><a href="flextomo.html#flextomo.projector.settings">settings (class in flextomo.projector)</a>
+</li>
+      <li><a href="flextomo.html#flextomo.projector.SIRT">SIRT() (in module flextomo.projector)</a>
+</li>
+      <li><a href="flextomo.html#flextomo.projector.settings.sorting">sorting (flextomo.projector.settings attribute)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="flextomo.html#flextomo.model.spectralize">spectralize() (in module flextomo.model)</a>
+</li>
       <li><a href="flextomo.html#flextomo.phantom.sphere">sphere() (in module flextomo.phantom)</a>
 </li>
       <li><a href="flextomo.html#flextomo.phantom.spheroid">spheroid() (in module flextomo.phantom)</a>
+</li>
+      <li><a href="flextomo.html#flextomo.projector.settings.student">student (flextomo.projector.settings attribute)</a>
+</li>
+      <li><a href="flextomo.html#flextomo.projector.settings.subsets">subsets (flextomo.projector.settings attribute)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="T">T</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="flextomo.html#flextomo.model.total_transmission">total_transmission() (in module flextomo.model)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="U">U</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="flextomo.html#flextomo.projector.settings.update_residual">update_residual (flextomo.projector.settings attribute)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="V">V</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="flextomo.html#flextomo.projector.settings.voxel_mask">voxel_mask (flextomo.projector.settings attribute)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -310,35 +420,16 @@
   
 
 
-  
-
-    
-    
-      <script type="text/javascript">
-          var DOCUMENTATION_OPTIONS = {
-              URL_ROOT:'./',
-              VERSION:'',
-              LANGUAGE:'en',
-              COLLAPSE_INDEX:false,
-              FILE_SUFFIX:'.html',
-              HAS_SOURCE:  true,
-              SOURCELINK_SUFFIX: '.txt'
-          };
-      </script>
-        <script type="text/javascript" src="_static/jquery.js"></script>
-        <script type="text/javascript" src="_static/underscore.js"></script>
-        <script type="text/javascript" src="_static/doctools.js"></script>
-    
-
-  
-
-  <script type="text/javascript" src="_static/js/theme.js"></script>
-
   <script type="text/javascript">
       jQuery(function () {
           SphinxRtdTheme.Navigation.enable(true);
       });
-  </script> 
+  </script>
+
+  
+  
+    
+   
 
 </body>
 </html>

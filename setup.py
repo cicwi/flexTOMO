@@ -72,6 +72,6 @@ setup(
     tests_require=test_requirements,
     extras_require={ 'dev': dev_requirements },
     url='https://github.com/teascavenger/flextomo',
-    version='0.0.1',
+    version='1.0.0',
     zip_safe=False,
 )
