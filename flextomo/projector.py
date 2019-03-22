@@ -357,7 +357,7 @@ def l2_update(projections, volume, geometry):
     for subset, pro_geom, vol_geom in _subset_generator_(projections, volume, geometry, copy = True):
                 
         # Forwardproject:
-        residual = numpy.zeros_like(subset)
+        residual = numpy.ascontiguousarray(numpy.zeros_like(subset))        
         _forwardproject_block_add_(residual, volume, pro_geom, vol_geom)   
             
         # Apply filters:
