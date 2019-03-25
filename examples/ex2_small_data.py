@@ -15,11 +15,12 @@ import numpy
     
 path = '/ufs/ciacc/flexbox/good/'
 
-dark = data.read_stack(path, 'di00', sample = 2)
-flat = data.read_stack(path, 'io00', sample = 2)    
-proj = data.read_stack(path, 'scan_', sample = 2, skip = 2)
+binn = 2
+dark = data.read_stack(path, 'di00', sample = binn)
+flat = data.read_stack(path, 'io00', sample = binn)    
+proj = data.read_stack(path, 'scan_', sample = binn, skip = binn)
 
-geom = data.read_flexraylog(path, sample = 2)   
+geom = data.read_flexraylog(path, sample = binn)   
  
 #%% Prepro:
     

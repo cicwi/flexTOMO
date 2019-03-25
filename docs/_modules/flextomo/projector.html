@@ -431,7 +431,7 @@
         <span class="c1"># Copy is made here to make sure the subset is contiguous:</span>
         <span class="n">subset_c</span> <span class="o">=</span> <span class="n">_contiguous_check_</span><span class="p">(</span><span class="n">subset</span><span class="p">,</span> <span class="n">copy</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> 
         
-        <span class="n">_forwardproject_block_add_</span><span class="p">(</span><span class="n">subset</span><span class="p">,</span> <span class="n">volume</span><span class="p">,</span> <span class="n">pro_geom</span><span class="p">,</span> <span class="n">vol_geom</span><span class="p">,</span> <span class="n">sign</span><span class="p">)</span>
+        <span class="n">_forwardproject_block_add_</span><span class="p">(</span><span class="n">subset_c</span><span class="p">,</span> <span class="n">volume</span><span class="p">,</span> <span class="n">pro_geom</span><span class="p">,</span> <span class="n">vol_geom</span><span class="p">,</span> <span class="n">sign</span><span class="p">)</span>
         <span class="n">subset</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">subset_c</span>
         
         <span class="c1"># Progress:</span>
@@ -504,7 +504,7 @@
     <span class="k">for</span> <span class="n">subset</span><span class="p">,</span> <span class="n">pro_geom</span><span class="p">,</span> <span class="n">vol_geom</span> <span class="ow">in</span> <span class="n">_subset_generator_</span><span class="p">(</span><span class="n">projections</span><span class="p">,</span> <span class="n">volume</span><span class="p">,</span> <span class="n">geometry</span><span class="p">,</span> <span class="n">copy</span> <span class="o">=</span> <span class="kc">True</span><span class="p">):</span>
                 
         <span class="c1"># Forwardproject:</span>
-        <span class="n">residual</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">subset</span><span class="p">)</span>
+        <span class="n">residual</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">ascontiguousarray</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">subset</span><span class="p">))</span>        
         <span class="n">_forwardproject_block_add_</span><span class="p">(</span><span class="n">residual</span><span class="p">,</span> <span class="n">volume</span><span class="p">,</span> <span class="n">pro_geom</span><span class="p">,</span> <span class="n">vol_geom</span><span class="p">)</span>   
             
         <span class="c1"># Apply filters:</span>
@@ -549,11 +549,11 @@
         <span class="n">bwp_w</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">volume</span><span class="p">)</span>
         
         <span class="c1"># Compute weights:</span>
-        <span class="n">fwp_w</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">subset</span> <span class="o">/</span> <span class="n">subset</span><span class="o">.</span><span class="n">mean</span><span class="p">())</span>
-        <span class="n">_backproject_block_add_</span><span class="p">(</span><span class="n">fwp_w</span><span class="p">,</span> <span class="n">bwp_w</span><span class="p">,</span> <span class="n">pro_geom</span><span class="p">,</span> <span class="n">vol_geom</span><span class="p">)</span>
+        <span class="n">fwp_w</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">subset</span><span class="p">)</span>
+        <span class="n">_backproject_block_add_</span><span class="p">(</span><span class="n">fwp_w</span><span class="p">,</span> <span class="n">bwp_w</span><span class="p">,</span> <span class="n">pro_geom</span><span class="p">,</span> <span class="n">vol_geom</span><span class="p">,</span> <span class="n">filtered</span>  <span class="o">=</span> <span class="kc">False</span><span class="p">)</span>
         
         <span class="c1"># Forwardproject:</span>
-        <span class="n">residual</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">subset</span><span class="p">)</span>
+        <span class="n">residual</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">ascontiguousarray</span><span class="p">(</span><span class="n">numpy</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">subset</span><span class="p">))</span> 
         <span class="n">_forwardproject_block_add_</span><span class="p">(</span><span class="n">residual</span><span class="p">,</span> <span class="n">volume</span><span class="p">,</span> <span class="n">pro_geom</span><span class="p">,</span> <span class="n">vol_geom</span><span class="p">)</span>   
         
         <span class="c1"># Apply filters:</span>
@@ -568,9 +568,9 @@
         <span class="n">_backproject_block_add_</span><span class="p">(</span><span class="n">residual</span><span class="p">,</span> <span class="n">vol_tmp</span><span class="p">,</span> <span class="n">pro_geom</span><span class="p">,</span> <span class="n">vol_geom</span><span class="p">,</span> <span class="n">filtered</span>  <span class="o">=</span> <span class="kc">False</span><span class="p">)</span>    
             
         <span class="c1"># Apply volume weights:</span>
-        <span class="n">eps</span> <span class="o">=</span> <span class="n">bwp_w</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="o">/</span> <span class="mi">100</span>    
-        <span class="n">bwp_w</span><span class="p">[</span><span class="n">bwp_w</span> <span class="o">&lt;</span> <span class="n">eps</span><span class="p">]</span> <span class="o">=</span> <span class="n">eps</span>
-                
+        <span class="n">bwp_w</span> <span class="o">/=</span> <span class="n">bwp_w</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
+        <span class="n">bwp_w</span><span class="p">[</span><span class="n">bwp_w</span> <span class="o">&lt;</span> <span class="mf">1e-2</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1e-2</span>
+                        
         <span class="n">volume</span> <span class="o">+=</span> <span class="n">vol_tmp</span> <span class="o">/</span> <span class="n">bwp_w</span>
         
     <span class="k">return</span> <span class="n">rnorm</span> <span class="o">/</span> <span class="n">subsets</span></div>

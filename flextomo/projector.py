@@ -284,7 +284,7 @@ def forwardproject(projections, volume, geometry, sign = 1):
         # Copy is made here to make sure the subset is contiguous:
         subset_c = _contiguous_check_(subset, copy = True) 
         
-        _forwardproject_block_add_(subset, volume, pro_geom, vol_geom, sign)
+        _forwardproject_block_add_(subset_c, volume, pro_geom, vol_geom, sign)
         subset[:] = subset_c
         
         # Progress:
@@ -402,11 +402,11 @@ def pwls_update(projections, volume, geometry):
         bwp_w = numpy.zeros_like(volume)
         
         # Compute weights:
-        fwp_w = numpy.exp(-subset / subset.mean())
-        _backproject_block_add_(fwp_w, bwp_w, pro_geom, vol_geom)
+        fwp_w = numpy.exp(-subset)
+        _backproject_block_add_(fwp_w, bwp_w, pro_geom, vol_geom, filtered  = False)
         
         # Forwardproject:
-        residual = numpy.zeros_like(subset)
+        residual = numpy.ascontiguousarray(numpy.zeros_like(subset)) 
         _forwardproject_block_add_(residual, volume, pro_geom, vol_geom)   
         
         # Apply filters:
@@ -421,9 +421,9 @@ def pwls_update(projections, volume, geometry):
         _backproject_block_add_(residual, vol_tmp, pro_geom, vol_geom, filtered  = False)    
             
         # Apply volume weights:
-        eps = bwp_w.max() / 100    
-        bwp_w[bwp_w < eps] = eps
-                
+        bwp_w /= bwp_w.max()
+        bwp_w[bwp_w < 1e-2] = 1e-2
+                        
         volume += vol_tmp / bwp_w
         
     return rnorm / subsets

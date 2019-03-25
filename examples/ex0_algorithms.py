@@ -17,13 +17,13 @@ import numpy
 #%% Create volume and forward project (32 projections):
     
 # Initialize images:    
-proj = numpy.zeros([3, 64, 512], dtype = 'float32')
+proj = numpy.zeros([30, 64, 512], dtype = 'float32')
 
 # Define a simple projection geometry:
 geom = geometry.circular(src2obj = 100, det2obj = 100, det_pixel = 0.01, ang_range = [0, 360])
 
 # Create phantom and project into proj:
-vol = phantom.abstract_nudes([3, 512, 512], geom, complexity = 10)
+vol = phantom.abstract_nudes([30, 512, 512], geom, complexity = 10)
 display.slice(vol, title = 'Phantom')
 
 # Forward project:
@@ -87,3 +87,9 @@ display.slice(vol_rec, title = 'StudentsT')
 vol_rec = numpy.ones_like(vol)
 projector.EM(proj, vol_rec, geom, iterations = 20)
 display.slice(vol_rec, bounds = [0, 1], title = 'EM')
+
+#%% PWLS:
+
+vol_rec = numpy.zeros_like(vol)
+projector.PWLS(proj, vol_rec, geom, iterations = 20)
+display.slice(vol_rec, bounds = [0, 1], title = 'PWLS')
