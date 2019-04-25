@@ -1,94 +1,77 @@
-# flextomo
+# flexTOMO
 
-ASTRA-based cone beam tomography reconstructions.
-
-
-* Free software: GNU General Public License v3
-* Documentation: [https://teascavenger.github.io/flextomo]
-
-
-## Readiness
-
-The author of this package is in the process of setting up this
-package for optimal usability. The following has already been completed:
-
-- [ ] Documentation
-    - Documentation has been generated using `make docs`, committed,
-        and pushed to GitHub.
-	- GitHub pages have been setup in the project settings
-	  with the "source" set to "master branch /docs folder".
-- [ ] An initial release
-	- In `CHANGELOG.md`, a release date has been added to v0.1.0 (change the YYYY-MM-DD).
-	- The release has been marked a release on GitHub.
-	- For more info, see the [Software Release Guide](https://cicwi.github.io/software-guidelines/software-release-guide).
-- [ ] A conda package
-	- Required packages have been added to `setup.py`, for instance,
-	  ```
-	  requirements = [ ]
-	  ```
-	  Has been replaced by
-	  ```
-	  requirements = [
-	      'sacred>=0.7.2'
-      ]
-      ```
-	- All "conda channels" that are required for building and
-      installing the package have been added to the
-      `Makefile`. Specifically, replace
-	  ```
-      conda_package: install_dev
-      	conda build conda/
-      ```
-	  by
-	  ```
-      conda_package: install_dev
-      	conda build conda/ -c some-channel -c some-other-channel
-      ```
-    - Conda packages have been built successfully with `make conda_package`.
-	- These conda packages have been uploaded to [Anaconda](https://anaconda.org).
-	- The installation instructions (below) have been updated.
+This project is a part of the larger X-ray tomographic reconstruction toolbox comprised of flexDATA, flexTOMO and flexCALC.
+flexTOMO provides a wrapper around a GPU-based tomographic reconstruction toolbox [ASTRA](https://www.astra-toolbox.com/).
+The main purpose of this project is to provide an easy way to use cone-beam forward- and back-projectors. Another purpose is to collect various algebraic reconstruction algorithms, providing support for large disk-mapped arrrays (memmaps) and subsets that allow to both accelerate convergence and to save RAM.
 
 ## Getting Started
 
-It takes a few steps to setup flextomo on your
-machine. We recommend installing
-[Anaconda package manager](https://www.anaconda.com/download/) for
-Python 3.
+Before installing flexTOMO, please download and install [flexDATA](https://github.com/cicwi/flexdata). Once installation of flexDATA is complete, one can install flexTOMO from the source code or using [Anaconda](https://www.anaconda.com/download/).
 
 ### Installing with conda
 
 Simply install with:
 ```
-conda install -c cicwi flextomo
+TODO
 ```
 
 ### Installing from source
 
-To install flextomo, simply clone this GitHub
-project. Go to the cloned directory and run PIP installer:
+To install flexTOMO, clone this GitHub project. Go to the cloned directory and run PIP installer:
 ```
-git clone https://github.com/teascavenger/flextomo.git
+git clone https://github.com/cicwi/flextomo.git
 cd flextomo
 pip install -e .
 ```
 
-### Running the examples
+## Running the examples
 
-To learn more about the functionality of the package check out our
-examples folder.
+To learn about the functionality of the package check out our examples folder. Examples are separated into blocks that are best to run in Spyder environment step-by-step.
+
+## Modules
+
+flexTOMO is comprised of two modules:
+
+* phantom:     a very simple modelue with a few phantom object generators
+* project:    main module that contains forward- and back-projectors, and algebraic reconstruction algorithms
+
+Typical code:
+```
+# Import:
+import numpy
+
+from flextomo import project
+from flextomo import phantom
+
+# Initialize projection images:    
+proj = numpy.zeros([512, 361, 512], dtype = 'float32')
+
+# Define a simple projection geometry:
+geom = geometry.circular(src2obj = 100, det2obj = 100, det_pixel = 0.01, ang_range = [0, 360])
+
+# Create phantom and project into proj:
+vol = phantom.abstract_nudes([512, 512, 512], geom, complexity = 10)
+
+# Forward project:
+project.forwardproject(proj, vol, geometry)
+```
 
 ## Authors and contributors
 
-* **Alex Kostenko ** - *Initial work*
+* **Alexander Kostenko** - *Initial work*
 
-See also the list of [contributors](https://github.com/teascavenger/flextomo/contributors) who participated in this project.
+See also the list of [contributors](https://github.com/cicwi/flexdata/contributors) who participated in this project.
 
 ## How to contribute
 
-Contributions are always welcome. Please submit pull requests against the `master` branch.
+Contributions are always welcome. Please submit pull requests against the `develop` branch.
 
 If you have any issues, questions, or remarks, then please open an issue on GitHub.
 
 ## License
 
-This project is licensed under the GNU General Public License v3 - see the [LICENSE.md](LICENSE.md) file for details.
+This project is licensed under the GNU GENERAL PUBLIC License - see the [LICENSE.md](LICENSE.md) file for details
+
+## Acknowledgments
+
+* To Willem Jan Palenstijn for endles advices regarding the use of ASTRA toolbox.

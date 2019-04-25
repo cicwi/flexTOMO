@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Simulation involving phase-contrast effect.
-We will simulate a phase contrast image of a marine shell.
+Simulation involving propagation based phase-contrast effect.
+We will simulate a phase contrast image of a "marine shell" scanned by a micro-CT scanner.
 """
 #%% Imports
 

@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Test forward / backward projection of a 2D phantom. Various algorithms: EM, SIRT, FISTA. 
-Effect of subset version of SIRT.
+Test of a multi-axis acquisition method. Synthetic data.
 """
 #%% Imports
 

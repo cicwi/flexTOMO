@@ -40,18 +40,17 @@ Typical code:
 # Import:
 import numpy
 
-from flexdata import io
 from flextomo import project
 from flextomo import phantom
 
-# Initialize images:    
+# Initialize projection images:    
 proj = numpy.zeros([512, 361, 512], dtype = 'float32')
 
 # Define a simple projection geometry:
-geometry = io.init_geometry(src2obj = 100, det2obj = 100, det_pixel = 0.01, theta_range = [0, 360], geom_type = 'simple')
+geom = geometry.circular(src2obj = 100, det2obj = 100, det_pixel = 0.01, ang_range = [0, 360])
 
 # Create phantom and project into proj:
-vol = phantom.abstract_nudes([512, 512, 512], geometry, complexity = 10)
+vol = phantom.abstract_nudes([512, 512, 512], geom, complexity = 10)
 
 # Forward project:
 project.forwardproject(proj, vol, geometry)

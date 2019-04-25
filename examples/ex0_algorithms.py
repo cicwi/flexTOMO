@@ -17,13 +17,13 @@ import numpy
 #%% Create volume and forward project (32 projections):
     
 # Initialize images:    
-proj = numpy.zeros([30, 64, 512], dtype = 'float32')
+proj = numpy.zeros([30, 64, 256], dtype = 'float32')
 
 # Define a simple projection geometry:
 geom = geometry.circular(src2obj = 100, det2obj = 100, det_pixel = 0.01, ang_range = [0, 360])
 
 # Create phantom and project into proj:
-vol = phantom.abstract_nudes([30, 512, 512], geom, complexity = 10)
+vol = phantom.abstract_nudes([30, 256, 256], geom, complexity = 8)
 display.slice(vol, title = 'Phantom')
 
 # Forward project:

@@ -69,9 +69,9 @@ docs/.nojekyll:
 	touch docs/.nojekyll
 
 docs: docs/.nojekyll install_dev ## generate Sphinx HTML documentation, including API docs
-	rm -f doc_sources/flextomo.rst
-	rm -f doc_sources/modules.rst
-	sphinx-apidoc -o doc_sources/ flextomo
+	#rm -f doc_sources/flextomo.rst
+	#rm -f doc_sources/modules.rst
+	#sphinx-apidoc -o doc_sources/ flextomo
 	make -C doc_sources clean
 	make -C doc_sources html
 	$(BROWSER) docs/index.html

@@ -11,7 +11,7 @@ Contents:
 
 
    readme
-   modules
+   flextomo
    changelog
 
 
