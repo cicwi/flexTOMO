@@ -87,14 +87,13 @@
 <li class="toctree-l3"><a class="reference internal" href="#installing-from-source">Installing from source</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="#running-the-examples">Running the examples</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#modules">Modules</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#authors-and-contributors">Authors and contributors</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#how-to-contribute">How to contribute</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#license">License</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#acknowledgments">Acknowledgments</a></li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="#import">Import:</a></li>
+<li class="toctree-l1"><a class="reference internal" href="#initialize-projection-images">Initialize projection images:</a></li>
+<li class="toctree-l1"><a class="reference internal" href="#define-a-simple-projection-geometry">Define a simple projection geometry:</a></li>
+<li class="toctree-l1"><a class="reference internal" href="#create-phantom-and-project-into-proj">Create phantom and project into proj:</a></li>
+<li class="toctree-l1"><a class="reference internal" href="#forward-project">Forward project:</a></li>
 <li class="toctree-l1"><a class="reference internal" href="flextomo.html">Modules</a></li>
 <li class="toctree-l1"><a class="reference internal" href="changelog.html">Changelog</a></li>
 </ul>
@@ -172,73 +171,83 @@ The main purpose of this project is to provide an easy way to use cone-beam forw
 <div class="section" id="installing-with-conda">
 <h3>Installing with conda<a class="headerlink" href="#installing-with-conda" title="Permalink to this headline">¶</a></h3>
 <p>Simply install with:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">TODO</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">conda</span> <span class="n">create</span> <span class="o">-</span><span class="n">n</span> <span class="o">&lt;</span><span class="n">your</span><span class="o">-</span><span class="n">environment</span><span class="o">&gt;</span> <span class="n">python</span><span class="o">=</span><span class="mf">3.6</span>
+<span class="n">conda</span> <span class="n">install</span> <span class="o">-</span><span class="n">c</span> <span class="n">cicwi</span> <span class="o">-</span><span class="n">c</span> <span class="n">astra</span><span class="o">-</span><span class="n">toolbox</span><span class="o">/</span><span class="n">label</span><span class="o">/</span><span class="n">dev</span> <span class="o">-</span><span class="n">c</span> <span class="n">conda</span><span class="o">-</span><span class="n">forge</span> <span class="o">-</span><span class="n">c</span> <span class="n">owlas</span> <span class="n">flextomo</span>
 </pre></div>
 </div>
 </div>
 <div class="section" id="installing-from-source">
 <h3>Installing from source<a class="headerlink" href="#installing-from-source" title="Permalink to this headline">¶</a></h3>
-<p>To install flexTOMO, clone this GitHub project. Go to the cloned directory and run PIP installer:</p>
+<p>To install flexTOMO you will need the latest version of the ASTRA toobox (preferably development version).
+We also recommend to install <a class="reference external" href="https://anaconda.org/conda-forge/xraylib">Xraylib</a> module using Anaconda from the Conda-Forge channel:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">conda</span> <span class="n">install</span> <span class="o">-</span><span class="n">c</span> <span class="n">astra</span><span class="o">-</span><span class="n">toolbox</span><span class="o">/</span><span class="n">label</span><span class="o">/</span><span class="n">dev</span> <span class="n">astra</span><span class="o">-</span><span class="n">toolbox</span>
+<span class="n">conda</span> <span class="n">install</span> <span class="o">-</span><span class="n">c</span> <span class="n">conda</span><span class="o">-</span><span class="n">forge</span> <span class="n">xraylib</span> 
+</pre></div>
+</div>
+<p>To install flexTOMO, simply clone this GitHub project. Go to the cloned directory and run PIP installer:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">git</span> <span class="n">clone</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">github</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">cicwi</span><span class="o">/</span><span class="n">flextomo</span><span class="o">.</span><span class="n">git</span>
-<span class="n">cd</span> <span class="n">flextomo</span>
+<span class="n">cd</span> <span class="n">flexdata</span>
 <span class="n">pip</span> <span class="n">install</span> <span class="o">-</span><span class="n">e</span> <span class="o">.</span>
+
+<span class="c1">## Running the examples</span>
+
+<span class="n">To</span> <span class="n">learn</span> <span class="n">about</span> <span class="n">the</span> <span class="n">functionality</span> <span class="n">of</span> <span class="n">the</span> <span class="n">package</span> <span class="n">check</span> <span class="n">out</span> <span class="n">our</span> <span class="n">examples</span> <span class="n">folder</span><span class="o">.</span> <span class="n">Examples</span> <span class="n">are</span> <span class="n">separated</span> <span class="n">into</span> <span class="n">blocks</span> <span class="n">that</span> <span class="n">are</span> <span class="n">best</span> <span class="n">to</span> <span class="n">run</span> <span class="ow">in</span> <span class="n">Spyder</span> <span class="n">environment</span> <span class="n">step</span><span class="o">-</span><span class="n">by</span><span class="o">-</span><span class="n">step</span><span class="o">.</span>
+
+<span class="c1">## Modules</span>
+
+<span class="n">flexTOMO</span> <span class="ow">is</span> <span class="n">comprised</span> <span class="n">of</span> <span class="n">two</span> <span class="n">modules</span><span class="p">:</span>
+
+<span class="o">*</span> <span class="n">phantom</span><span class="p">:</span>     <span class="n">a</span> <span class="n">very</span> <span class="n">simple</span> <span class="n">modelue</span> <span class="k">with</span> <span class="n">a</span> <span class="n">few</span> <span class="n">phantom</span> <span class="nb">object</span> <span class="n">generators</span>
+<span class="o">*</span> <span class="n">project</span><span class="p">:</span>    <span class="n">main</span> <span class="n">module</span> <span class="n">that</span> <span class="n">contains</span> <span class="n">forward</span><span class="o">-</span> <span class="ow">and</span> <span class="n">back</span><span class="o">-</span><span class="n">projectors</span><span class="p">,</span> <span class="ow">and</span> <span class="n">algebraic</span> <span class="n">reconstruction</span> <span class="n">algorithms</span>
+
+<span class="n">Typical</span> <span class="n">code</span><span class="p">:</span>
 </pre></div>
 </div>
 </div>
 </div>
-<div class="section" id="running-the-examples">
-<h2>Running the examples<a class="headerlink" href="#running-the-examples" title="Permalink to this headline">¶</a></h2>
-<p>To learn about the functionality of the package check out our examples folder. Examples are separated into blocks that are best to run in Spyder environment step-by-step.</p>
 </div>
-<div class="section" id="modules">
-<h2>Modules<a class="headerlink" href="#modules" title="Permalink to this headline">¶</a></h2>
-<p>flexTOMO is comprised of two modules:</p>
-<ul class="simple">
-<li>phantom:     a very simple modelue with a few phantom object generators</li>
-<li>project:    main module that contains forward- and back-projectors, and algebraic reconstruction algorithms</li>
-</ul>
-<p>Typical code:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># Import:</span>
-<span class="kn">import</span> <span class="nn">numpy</span>
+<div class="section" id="import">
+<h1>Import:<a class="headerlink" href="#import" title="Permalink to this headline">¶</a></h1>
+<p>import numpy</p>
+<p>from flextomo import project
+from flextomo import phantom</p>
+</div>
+<div class="section" id="initialize-projection-images">
+<h1>Initialize projection images:<a class="headerlink" href="#initialize-projection-images" title="Permalink to this headline">¶</a></h1>
+<p>proj = numpy.zeros([512, 361, 512], dtype = ‘float32’)</p>
+</div>
+<div class="section" id="define-a-simple-projection-geometry">
+<h1>Define a simple projection geometry:<a class="headerlink" href="#define-a-simple-projection-geometry" title="Permalink to this headline">¶</a></h1>
+<p>geom = geometry.circular(src2obj = 100, det2obj = 100, det_pixel = 0.01, ang_range = [0, 360])</p>
+</div>
+<div class="section" id="create-phantom-and-project-into-proj">
+<h1>Create phantom and project into proj:<a class="headerlink" href="#create-phantom-and-project-into-proj" title="Permalink to this headline">¶</a></h1>
+<p>vol = phantom.abstract_nudes([512, 512, 512], geom, complexity = 10)</p>
+</div>
+<div class="section" id="forward-project">
+<h1>Forward project:<a class="headerlink" href="#forward-project" title="Permalink to this headline">¶</a></h1>
+<p>project.forwardproject(proj, vol, geometry)</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>
+## Authors and contributors
 
-<span class="kn">from</span> <span class="nn">flextomo</span> <span class="k">import</span> <span class="n">project</span>
-<span class="kn">from</span> <span class="nn">flextomo</span> <span class="k">import</span> <span class="n">phantom</span>
+* **Alexander Kostenko** - *Initial work*
 
-<span class="c1"># Initialize projection images:    </span>
-<span class="n">proj</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros</span><span class="p">([</span><span class="mi">512</span><span class="p">,</span> <span class="mi">361</span><span class="p">,</span> <span class="mi">512</span><span class="p">],</span> <span class="n">dtype</span> <span class="o">=</span> <span class="s1">&#39;float32&#39;</span><span class="p">)</span>
+See also the list of [contributors](https://github.com/cicwi/flexdata/contributors) who participated in this project.
 
-<span class="c1"># Define a simple projection geometry:</span>
-<span class="n">geom</span> <span class="o">=</span> <span class="n">geometry</span><span class="o">.</span><span class="n">circular</span><span class="p">(</span><span class="n">src2obj</span> <span class="o">=</span> <span class="mi">100</span><span class="p">,</span> <span class="n">det2obj</span> <span class="o">=</span> <span class="mi">100</span><span class="p">,</span> <span class="n">det_pixel</span> <span class="o">=</span> <span class="mf">0.01</span><span class="p">,</span> <span class="n">ang_range</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">360</span><span class="p">])</span>
+## How to contribute
 
-<span class="c1"># Create phantom and project into proj:</span>
-<span class="n">vol</span> <span class="o">=</span> <span class="n">phantom</span><span class="o">.</span><span class="n">abstract_nudes</span><span class="p">([</span><span class="mi">512</span><span class="p">,</span> <span class="mi">512</span><span class="p">,</span> <span class="mi">512</span><span class="p">],</span> <span class="n">geom</span><span class="p">,</span> <span class="n">complexity</span> <span class="o">=</span> <span class="mi">10</span><span class="p">)</span>
+Contributions are always welcome. Please submit pull requests against the `develop` branch.
 
-<span class="c1"># Forward project:</span>
-<span class="n">project</span><span class="o">.</span><span class="n">forwardproject</span><span class="p">(</span><span class="n">proj</span><span class="p">,</span> <span class="n">vol</span><span class="p">,</span> <span class="n">geometry</span><span class="p">)</span>
+If you have any issues, questions, or remarks, then please open an issue on GitHub.
+
+## License
+
+This project is licensed under the GNU GENERAL PUBLIC License - see the [LICENSE.md](LICENSE.md) file for details
+
+## Acknowledgments
+
+* To Willem Jan Palenstijn for endles advices regarding the use of ASTRA toolbox.
 </pre></div>
-</div>
-</div>
-<div class="section" id="authors-and-contributors">
-<h2>Authors and contributors<a class="headerlink" href="#authors-and-contributors" title="Permalink to this headline">¶</a></h2>
-<ul class="simple">
-<li><strong>Alexander Kostenko</strong> - <em>Initial work</em></li>
-</ul>
-<p>See also the list of <a class="reference external" href="https://github.com/cicwi/flexdata/contributors">contributors</a> who participated in this project.</p>
-</div>
-<div class="section" id="how-to-contribute">
-<h2>How to contribute<a class="headerlink" href="#how-to-contribute" title="Permalink to this headline">¶</a></h2>
-<p>Contributions are always welcome. Please submit pull requests against the <code class="docutils literal notranslate"><span class="pre">develop</span></code> branch.</p>
-<p>If you have any issues, questions, or remarks, then please open an issue on GitHub.</p>
-</div>
-<div class="section" id="license">
-<h2>License<a class="headerlink" href="#license" title="Permalink to this headline">¶</a></h2>
-<p>This project is licensed under the GNU GENERAL PUBLIC License - see the <a class="reference external" href="LICENSE">LICENSE.md</a> file for details</p>
-</div>
-<div class="section" id="acknowledgments">
-<h2>Acknowledgments<a class="headerlink" href="#acknowledgments" title="Permalink to this headline">¶</a></h2>
-<ul class="simple">
-<li>To Willem Jan Palenstijn for endles advices regarding the use of ASTRA toolbox.</li>
-</ul>
 </div>
 </div>
 

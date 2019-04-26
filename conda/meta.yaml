@@ -19,13 +19,14 @@ requirements:
 
     run:
         - python
+
         # dependencies are defined in setup.py
         {% for dep in data['install_requires'] %}
         - {{ dep.lower() }}
         {% endfor %}
 
 about:
-    home: https://github.com/teascavenger/flextomo
+    home: https://github.com/cicwi/flexTOMO
     license_file: LICENSE.md
     summary: "ASTRA-based cone beam tomography reconstructions."
 

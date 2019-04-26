@@ -1,6 +1,6 @@
 # flexTOMO
 
-This project is a part of the larger X-ray tomographic reconstruction toolbox comprised of flexDATA, flexTOMO and flexCALC.
+This project is a part of the larger X-ray tomographic reconstruction toolbox comprised of [flexDATA], [flexTOMO] and [flexCALC].
 flexTOMO provides a wrapper around a GPU-based tomographic reconstruction toolbox [ASTRA](https://www.astra-toolbox.com/).
 The main purpose of this project is to provide an easy way to use cone-beam forward- and back-projectors. Another purpose is to collect various algebraic reconstruction algorithms, providing support for large disk-mapped arrrays (memmaps) and subsets that allow to both accelerate convergence and to save RAM.
 
@@ -12,17 +12,25 @@ Before installing flexTOMO, please download and install [flexDATA](https://githu
 
 Simply install with:
 ```
-TODO
+conda create -n <your-environment> python=3.6
+conda install -c cicwi -c astra-toolbox/label/dev -c conda-forge -c owlas flextomo
 ```
 
 ### Installing from source
 
-To install flexTOMO, clone this GitHub project. Go to the cloned directory and run PIP installer:
+To install flexTOMO you will need the latest version of the ASTRA toobox (preferably development version).
+We also recommend to install [Xraylib](https://anaconda.org/conda-forge/xraylib) module using Anaconda from the Conda-Forge channel: 
+
+```
+conda install -c astra-toolbox/label/dev astra-toolbox
+conda install -c conda-forge xraylib 
+```
+
+To install flexTOMO, simply clone this GitHub project. Go to the cloned directory and run PIP installer:
 ```
 git clone https://github.com/cicwi/flextomo.git
-cd flextomo
+cd flexdata
 pip install -e .
-```
 
 ## Running the examples
 

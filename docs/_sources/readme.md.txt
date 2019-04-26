@@ -12,17 +12,25 @@ Before installing flexTOMO, please download and install [flexDATA](https://githu
 
 Simply install with:
 ```
-TODO
+conda create -n <your-environment> python=3.6
+conda install -c cicwi -c astra-toolbox/label/dev -c conda-forge -c owlas flextomo
 ```
 
 ### Installing from source
 
-To install flexTOMO, clone this GitHub project. Go to the cloned directory and run PIP installer:
+To install flexTOMO you will need the latest version of the ASTRA toobox (preferably development version).
+We also recommend to install [Xraylib](https://anaconda.org/conda-forge/xraylib) module using Anaconda from the Conda-Forge channel: 
+
+```
+conda install -c astra-toolbox/label/dev astra-toolbox
+conda install -c conda-forge xraylib 
+```
+
+To install flexTOMO, simply clone this GitHub project. Go to the cloned directory and run PIP installer:
 ```
 git clone https://github.com/cicwi/flextomo.git
-cd flextomo
+cd flexdata
 pip install -e .
-```
 
 ## Running the examples
 
