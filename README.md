@@ -12,7 +12,7 @@ Before installing flexTOMO, please download and install [flexDATA](https://githu
 
 Simply install with:
 ```
-conda create -n <your-environment> python=3.6
+conda create -n <your-environment> python=3.7
 conda install -c cicwi -c astra-toolbox/label/dev -c conda-forge -c owlas flextomo
 ```
 
@@ -31,7 +31,7 @@ To install flexTOMO, simply clone this GitHub project. Go to the cloned director
 git clone https://github.com/cicwi/flextomo.git
 cd flexdata
 pip install -e .
-
+```
 ## Running the examples
 
 To learn about the functionality of the package check out our examples folder. Examples are separated into blocks that are best to run in Spyder environment step-by-step.

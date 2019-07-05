@@ -634,14 +634,14 @@ def _bp_norm_(projections, volume, geometry):
         vv = geometry[0].voxel
         det_sam = geometry[0].det_sample[1]
         
-        pix = (vv[0] * vv[1] * vv[2] * vv[2]) / det_sam
+        pix = (vv[1] * vv[1] * vv[2] * vv[2]) / det_sam
         return 1 / (projections[0].shape[1] * pix * max(volume.shape))
     
     else:
         vv = geometry.voxel
         det_sam = geometry.det_sample[1]
     
-        pix = (vv[0] * vv[1] * vv[2] * vv[2]) / det_sam
+        pix = (vv[1] * vv[1] * vv[2] * vv[2]) / det_sam
         return 1 / (projections.shape[1] * pix * max(volume.shape))
         
 def _backproject_block_add_(projections, volume, proj_geom, vol_geom, filtered = False, sign = 1):
