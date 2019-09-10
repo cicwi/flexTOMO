@@ -82,16 +82,12 @@
             
               <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="readme.html">flexTOMO</a></li>
-<li class="toctree-l1"><a class="reference internal" href="readme.html#import">Import:</a></li>
-<li class="toctree-l1"><a class="reference internal" href="readme.html#initialize-projection-images">Initialize projection images:</a></li>
-<li class="toctree-l1"><a class="reference internal" href="readme.html#define-a-simple-projection-geometry">Define a simple projection geometry:</a></li>
-<li class="toctree-l1"><a class="reference internal" href="readme.html#create-phantom-and-project-into-proj">Create phantom and project into proj:</a></li>
-<li class="toctree-l1"><a class="reference internal" href="readme.html#forward-project">Forward project:</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Modules</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#module-flextomo.projector">flextomo.projector</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#module-flextomo.phantom">flextomo.phantom</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#module-flextomo.model">flextomo.model</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#module-flextomo">Module contents</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#backend">Backend</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="changelog.html">Changelog</a></li>
@@ -168,39 +164,40 @@
 <span id="flextomo-projector"></span><h2>flextomo.projector<a class="headerlink" href="#module-flextomo.projector" title="Permalink to this headline">¶</a></h2>
 <p>Created on Oct 2018
 &#64;author: Alex Kostenko</p>
-<dl class="docutils">
-<dt>This module contains: building blocks for reconstruction algorithms:</dt>
-<dd>back- and forward-projection operators, gradient descent updates</dd>
+<dl class="simple">
+<dt>This module contains: building blocks for reconstruction algorithms:</dt><dd><p>back- and forward-projection operators, gradient descent updates</p>
+</dd>
 </dl>
 <p>All of the functions support large datasets implemented using numpy.memmap arrays
 and geometry classes defined in flexData.geometry.</p>
 <p>All projectors are based on ASTRA and are GPU-accelerated (CUDA).</p>
 <dl class="function">
 <dt id="flextomo.projector.EM">
-<code class="descclassname">flextomo.projector.</code><code class="descname">EM</code><span class="sig-paren">(</span><em>projections</em>, <em>volume</em>, <em>geometry</em>, <em>iterations</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/flextomo/projector.html#EM"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#flextomo.projector.EM" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">flextomo.projector.</code><code class="sig-name descname">EM</code><span class="sig-paren">(</span><em class="sig-param">projections</em>, <em class="sig-param">volume</em>, <em class="sig-param">geometry</em>, <em class="sig-param">iterations</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/flextomo/projector.html#EM"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#flextomo.projector.EM" title="Permalink to this definition">¶</a></dt>
 <dd><p>Expectation Maximization</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="flextomo.projector.FDK">
-<code class="descclassname">flextomo.projector.</code><code class="descname">FDK</code><span class="sig-paren">(</span><em>projections</em>, <em>volume</em>, <em>geometry</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/flextomo/projector.html#FDK"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#flextomo.projector.FDK" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">flextomo.projector.</code><code class="sig-name descname">FDK</code><span class="sig-paren">(</span><em class="sig-param">projections</em>, <em class="sig-param">volume</em>, <em class="sig-param">geometry</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/flextomo/projector.html#FDK"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#flextomo.projector.FDK" title="Permalink to this definition">¶</a></dt>
 <dd><p>Feldkamp, Davis and Kress cone beam reconstruction.
 Args:</p>
 <blockquote>
-<div>projections : input numpy.array (dtype = float32) with the following dimensions: [vrt, rot, hrz]
+<div><p>projections : input numpy.array (dtype = float32) with the following dimensions: [vrt, rot, hrz]
 volume      : output numpy.array (dtype = float32) with the following dimensions: [vrt, mag, hrz]
-geometry    : geometry description - one of threee types: ‘simple’, ‘static_offsets’, ‘linear_offsets’</div></blockquote>
+geometry    : geometry description - one of threee types: ‘simple’, ‘static_offsets’, ‘linear_offsets’</p>
+</div></blockquote>
 </dd></dl>
 
 <dl class="function">
 <dt id="flextomo.projector.FISTA">
-<code class="descclassname">flextomo.projector.</code><code class="descname">FISTA</code><span class="sig-paren">(</span><em>projections</em>, <em>volume</em>, <em>geometry</em>, <em>iterations</em>, <em>lmbda=0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/flextomo/projector.html#FISTA"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#flextomo.projector.FISTA" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">flextomo.projector.</code><code class="sig-name descname">FISTA</code><span class="sig-paren">(</span><em class="sig-param">projections</em>, <em class="sig-param">volume</em>, <em class="sig-param">geometry</em>, <em class="sig-param">iterations</em>, <em class="sig-param">lmbda=0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/flextomo/projector.html#FISTA"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#flextomo.projector.FISTA" title="Permalink to this definition">¶</a></dt>
 <dd><p>FISTA reconstruction. Right now there is no TV minimization substep here!</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="flextomo.projector.PWLS">
-<code class="descclassname">flextomo.projector.</code><code class="descname">PWLS</code><span class="sig-paren">(</span><em>projections</em>, <em>volume</em>, <em>geometry</em>, <em>iterations</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/flextomo/projector.html#PWLS"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#flextomo.projector.PWLS" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">flextomo.projector.</code><code class="sig-name descname">PWLS</code><span class="sig-paren">(</span><em class="sig-param">projections</em>, <em class="sig-param">volume</em>, <em class="sig-param">geometry</em>, <em class="sig-param">iterations</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/flextomo/projector.html#PWLS"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#flextomo.projector.PWLS" title="Permalink to this definition">¶</a></dt>
 <dd><p>Simple implementation of the Penalized Weighted Least Squeares. 
 Gives better results when photon starvation and metal artifacts are present in small parts of the volume.
 Needs more memory than SIRT!</p>
@@ -208,72 +205,72 @@ Needs more memory than SIRT!</p>
 
 <dl class="function">
 <dt id="flextomo.projector.SIRT">
-<code class="descclassname">flextomo.projector.</code><code class="descname">SIRT</code><span class="sig-paren">(</span><em>projections</em>, <em>volume</em>, <em>geometry</em>, <em>iterations</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/flextomo/projector.html#SIRT"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#flextomo.projector.SIRT" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">flextomo.projector.</code><code class="sig-name descname">SIRT</code><span class="sig-paren">(</span><em class="sig-param">projections</em>, <em class="sig-param">volume</em>, <em class="sig-param">geometry</em>, <em class="sig-param">iterations</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/flextomo/projector.html#SIRT"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#flextomo.projector.SIRT" title="Permalink to this definition">¶</a></dt>
 <dd><p>Simultaneous Iterative Reconstruction Technique.</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="flextomo.projector.backproject">
-<code class="descclassname">flextomo.projector.</code><code class="descname">backproject</code><span class="sig-paren">(</span><em>projections</em>, <em>volume</em>, <em>geometry</em>, <em>filtered=False</em>, <em>sign=1</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/flextomo/projector.html#backproject"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#flextomo.projector.backproject" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">flextomo.projector.</code><code class="sig-name descname">backproject</code><span class="sig-paren">(</span><em class="sig-param">projections</em>, <em class="sig-param">volume</em>, <em class="sig-param">geometry</em>, <em class="sig-param">filtered=False</em>, <em class="sig-param">sign=1</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/flextomo/projector.html#backproject"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#flextomo.projector.backproject" title="Permalink to this definition">¶</a></dt>
 <dd><p>Backproject using standard ASTRA functionality. 
 If data array is memmap, backprojection is done using 10+ subsets to save RAM.</p>
-<dl class="docutils">
-<dt>Args:</dt>
-<dd>projections : input numpy.array (dtype = float32) with the following dimensions: [vrt, rot, hrz]
+<dl class="simple">
+<dt>Args:</dt><dd><p>projections : input numpy.array (dtype = float32) with the following dimensions: [vrt, rot, hrz]
 volume      : output numpy.array (dtype = float32) with the following dimensions: [vrt, mag, hrz]
 geometry    : geometry description. See flexData.geometry
 filtered    : use Feldkamp (True) or unfiltered (False) backprojection
-sign        : either +1 or -1 (add or subtract from volume)</dd>
+sign        : either +1 or -1 (add or subtract from volume)</p>
+</dd>
 </dl>
 </dd></dl>
 
 <dl class="function">
 <dt id="flextomo.projector.em_update">
-<code class="descclassname">flextomo.projector.</code><code class="descname">em_update</code><span class="sig-paren">(</span><em>projections</em>, <em>volume</em>, <em>geometry</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/flextomo/projector.html#em_update"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#flextomo.projector.em_update" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">flextomo.projector.</code><code class="sig-name descname">em_update</code><span class="sig-paren">(</span><em class="sig-param">projections</em>, <em class="sig-param">volume</em>, <em class="sig-param">geometry</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/flextomo/projector.html#em_update"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#flextomo.projector.em_update" title="Permalink to this definition">¶</a></dt>
 <dd><p>A single Expecrtation Maximization step. Supports blocking and subsets.</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="flextomo.projector.fista_update">
-<code class="descclassname">flextomo.projector.</code><code class="descname">fista_update</code><span class="sig-paren">(</span><em>projections</em>, <em>vol</em>, <em>vol_old</em>, <em>vol_t</em>, <em>vol_tv</em>, <em>t</em>, <em>geometry</em>, <em>lmbda=0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/flextomo/projector.html#fista_update"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#flextomo.projector.fista_update" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">flextomo.projector.</code><code class="sig-name descname">fista_update</code><span class="sig-paren">(</span><em class="sig-param">projections</em>, <em class="sig-param">vol</em>, <em class="sig-param">vol_old</em>, <em class="sig-param">vol_t</em>, <em class="sig-param">vol_tv</em>, <em class="sig-param">t</em>, <em class="sig-param">geometry</em>, <em class="sig-param">lmbda=0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/flextomo/projector.html#fista_update"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#flextomo.projector.fista_update" title="Permalink to this definition">¶</a></dt>
 <dd><p>A single FISTA step. Supports blocking and subsets.</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="flextomo.projector.forwardproject">
-<code class="descclassname">flextomo.projector.</code><code class="descname">forwardproject</code><span class="sig-paren">(</span><em>projections</em>, <em>volume</em>, <em>geometry</em>, <em>sign=1</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/flextomo/projector.html#forwardproject"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#flextomo.projector.forwardproject" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">flextomo.projector.</code><code class="sig-name descname">forwardproject</code><span class="sig-paren">(</span><em class="sig-param">projections</em>, <em class="sig-param">volume</em>, <em class="sig-param">geometry</em>, <em class="sig-param">sign=1</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/flextomo/projector.html#forwardproject"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#flextomo.projector.forwardproject" title="Permalink to this definition">¶</a></dt>
 <dd><p>Forwardproject using standard ASTRA functionality. 
 If projections array is numpy.memmap, projection is done in blocks to save RAM.</p>
-<dl class="docutils">
-<dt>Args:</dt>
-<dd>projections : output numpy.array (dtype = float32) with the following dimensions: [vrt, rot, hrz]
+<dl class="simple">
+<dt>Args:</dt><dd><p>projections : output numpy.array (dtype = float32) with the following dimensions: [vrt, rot, hrz]
 volume      : input numpy.array (dtype = float32) with the following dimensions: [vrt, mag, hrz]
 geometry    : geometry description - one of threee types: ‘simple’, ‘static_offsets’, ‘linear_offsets’
-sign        : either +1 or -1 (add or subtract the data)</dd>
+sign        : either +1 or -1 (add or subtract the data)</p>
+</dd>
 </dl>
 </dd></dl>
 
 <dl class="function">
 <dt id="flextomo.projector.init_volume">
-<code class="descclassname">flextomo.projector.</code><code class="descname">init_volume</code><span class="sig-paren">(</span><em>projections</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/flextomo/projector.html#init_volume"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#flextomo.projector.init_volume" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">flextomo.projector.</code><code class="sig-name descname">init_volume</code><span class="sig-paren">(</span><em class="sig-param">projections</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/flextomo/projector.html#init_volume"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#flextomo.projector.init_volume" title="Permalink to this definition">¶</a></dt>
 <dd><p>Initialize a standard-size volume array.</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="flextomo.projector.l1_update">
-<code class="descclassname">flextomo.projector.</code><code class="descname">l1_update</code><span class="sig-paren">(</span><em>vol_tv</em>, <em>vol_t</em>, <em>vol</em>, <em>L</em>, <em>lamb</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/flextomo/projector.html#l1_update"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#flextomo.projector.l1_update" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">flextomo.projector.</code><code class="sig-name descname">l1_update</code><span class="sig-paren">(</span><em class="sig-param">vol_tv</em>, <em class="sig-param">vol_t</em>, <em class="sig-param">vol</em>, <em class="sig-param">L</em>, <em class="sig-param">lamb</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/flextomo/projector.html#l1_update"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#flextomo.projector.l1_update" title="Permalink to this definition">¶</a></dt>
 <dd><p>Calculate image with lower TV. Stores the results in vol. It uses residual vol_tv from the last time it was called.</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="flextomo.projector.l2_update">
-<code class="descclassname">flextomo.projector.</code><code class="descname">l2_update</code><span class="sig-paren">(</span><em>projections</em>, <em>volume</em>, <em>geometry</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/flextomo/projector.html#l2_update"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#flextomo.projector.l2_update" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">flextomo.projector.</code><code class="sig-name descname">l2_update</code><span class="sig-paren">(</span><em class="sig-param">projections</em>, <em class="sig-param">volume</em>, <em class="sig-param">geometry</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/flextomo/projector.html#l2_update"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#flextomo.projector.l2_update" title="Permalink to this definition">¶</a></dt>
 <dd><p>A single L2-norm minimization update. Supports subsets.</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="flextomo.projector.pwls_update">
-<code class="descclassname">flextomo.projector.</code><code class="descname">pwls_update</code><span class="sig-paren">(</span><em>projections</em>, <em>volume</em>, <em>geometry</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/flextomo/projector.html#pwls_update"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#flextomo.projector.pwls_update" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">flextomo.projector.</code><code class="sig-name descname">pwls_update</code><span class="sig-paren">(</span><em class="sig-param">projections</em>, <em class="sig-param">volume</em>, <em class="sig-param">geometry</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/flextomo/projector.html#pwls_update"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#flextomo.projector.pwls_update" title="Permalink to this definition">¶</a></dt>
 <dd><p>A single L2-norm update that applies weights based on Poisson 
 statistics to both residual and volume update. 
 Uses more memory than the standard l2_update.</p>
@@ -281,7 +278,7 @@ Uses more memory than the standard l2_update.</p>
 
 <dl class="class">
 <dt id="flextomo.projector.settings">
-<em class="property">class </em><code class="descclassname">flextomo.projector.</code><code class="descname">settings</code><a class="reference internal" href="_modules/flextomo/projector.html#settings"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#flextomo.projector.settings" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">flextomo.projector.</code><code class="sig-name descname">settings</code><a class="reference internal" href="_modules/flextomo/projector.html#settings"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#flextomo.projector.settings" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>Settings container used by projectors and reconstruction algorithms.
 Attributes:</p>
@@ -300,57 +297,57 @@ bounds          : Lower and upper bounds for the reconstruction values</p>
 </div></blockquote>
 <dl class="attribute">
 <dt id="flextomo.projector.settings.bounds">
-<code class="descname">bounds</code><em class="property"> = None</em><a class="headerlink" href="#flextomo.projector.settings.bounds" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">bounds</code><em class="property"> = None</em><a class="headerlink" href="#flextomo.projector.settings.bounds" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
 <dt id="flextomo.projector.settings.fourier_filter">
-<code class="descname">fourier_filter</code><em class="property"> = None</em><a class="headerlink" href="#flextomo.projector.settings.fourier_filter" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">fourier_filter</code><em class="property"> = None</em><a class="headerlink" href="#flextomo.projector.settings.fourier_filter" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
 <dt id="flextomo.projector.settings.pixel_mask">
-<code class="descname">pixel_mask</code><em class="property"> = None</em><a class="headerlink" href="#flextomo.projector.settings.pixel_mask" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">pixel_mask</code><em class="property"> = None</em><a class="headerlink" href="#flextomo.projector.settings.pixel_mask" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
 <dt id="flextomo.projector.settings.poisson">
-<code class="descname">poisson</code><em class="property"> = False</em><a class="headerlink" href="#flextomo.projector.settings.poisson" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">poisson</code><em class="property"> = False</em><a class="headerlink" href="#flextomo.projector.settings.poisson" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
 <dt id="flextomo.projector.settings.preview">
-<code class="descname">preview</code><em class="property"> = False</em><a class="headerlink" href="#flextomo.projector.settings.preview" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">preview</code><em class="property"> = False</em><a class="headerlink" href="#flextomo.projector.settings.preview" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
 <dt id="flextomo.projector.settings.progress_bar">
-<code class="descname">progress_bar</code><em class="property"> = True</em><a class="headerlink" href="#flextomo.projector.settings.progress_bar" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">progress_bar</code><em class="property"> = True</em><a class="headerlink" href="#flextomo.projector.settings.progress_bar" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
 <dt id="flextomo.projector.settings.sorting">
-<code class="descname">sorting</code><em class="property"> = 'sequential'</em><a class="headerlink" href="#flextomo.projector.settings.sorting" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">sorting</code><em class="property"> = 'sequential'</em><a class="headerlink" href="#flextomo.projector.settings.sorting" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
 <dt id="flextomo.projector.settings.student">
-<code class="descname">student</code><em class="property"> = False</em><a class="headerlink" href="#flextomo.projector.settings.student" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">student</code><em class="property"> = False</em><a class="headerlink" href="#flextomo.projector.settings.student" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
 <dt id="flextomo.projector.settings.subsets">
-<code class="descname">subsets</code><em class="property"> = 1</em><a class="headerlink" href="#flextomo.projector.settings.subsets" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">subsets</code><em class="property"> = 1</em><a class="headerlink" href="#flextomo.projector.settings.subsets" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
 <dt id="flextomo.projector.settings.update_residual">
-<code class="descname">update_residual</code><em class="property"> = False</em><a class="headerlink" href="#flextomo.projector.settings.update_residual" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">update_residual</code><em class="property"> = False</em><a class="headerlink" href="#flextomo.projector.settings.update_residual" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
 <dt id="flextomo.projector.settings.voxel_mask">
-<code class="descname">voxel_mask</code><em class="property"> = None</em><a class="headerlink" href="#flextomo.projector.settings.voxel_mask" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">voxel_mask</code><em class="property"> = None</em><a class="headerlink" href="#flextomo.projector.settings.voxel_mask" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 </dd></dl>
@@ -364,43 +361,43 @@ bounds          : Lower and upper bounds for the reconstruction values</p>
 to compute dimensions correctly.</p>
 <dl class="function">
 <dt id="flextomo.phantom.abstract_nudes">
-<code class="descclassname">flextomo.phantom.</code><code class="descname">abstract_nudes</code><span class="sig-paren">(</span><em>shape</em>, <em>geometry</em>, <em>complexity=10</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/flextomo/phantom.html#abstract_nudes"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#flextomo.phantom.abstract_nudes" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">flextomo.phantom.</code><code class="sig-name descname">abstract_nudes</code><span class="sig-paren">(</span><em class="sig-param">shape</em>, <em class="sig-param">geometry</em>, <em class="sig-param">complexity=10</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/flextomo/phantom.html#abstract_nudes"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#flextomo.phantom.abstract_nudes" title="Permalink to this definition">¶</a></dt>
 <dd><p>Creates works of abstract art.</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="flextomo.phantom.checkers">
-<code class="descclassname">flextomo.phantom.</code><code class="descname">checkers</code><span class="sig-paren">(</span><em>shape, geometry, frequency, offset=[0.0, 0.0, 0.0]</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/flextomo/phantom.html#checkers"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#flextomo.phantom.checkers" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">flextomo.phantom.</code><code class="sig-name descname">checkers</code><span class="sig-paren">(</span><em class="sig-param">shape, geometry, frequency, offset=[0.0, 0.0, 0.0]</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/flextomo/phantom.html#checkers"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#flextomo.phantom.checkers" title="Permalink to this definition">¶</a></dt>
 <dd><p>Make a 3D checkers board.</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="flextomo.phantom.cuboid">
-<code class="descclassname">flextomo.phantom.</code><code class="descname">cuboid</code><span class="sig-paren">(</span><em>shape, geometry, a, b, c, offset=[0.0, 0.0, 0.0]</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/flextomo/phantom.html#cuboid"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#flextomo.phantom.cuboid" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">flextomo.phantom.</code><code class="sig-name descname">cuboid</code><span class="sig-paren">(</span><em class="sig-param">shape, geometry, a, b, c, offset=[0.0, 0.0, 0.0]</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/flextomo/phantom.html#cuboid"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#flextomo.phantom.cuboid" title="Permalink to this definition">¶</a></dt>
 <dd><p>Make a cuboid. Dimensions are in units (geometry.parameters[‘unit’])</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="flextomo.phantom.cylinder">
-<code class="descclassname">flextomo.phantom.</code><code class="descname">cylinder</code><span class="sig-paren">(</span><em>shape, geometry, r, h, offset=[0.0, 0.0, 0.0]</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/flextomo/phantom.html#cylinder"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#flextomo.phantom.cylinder" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">flextomo.phantom.</code><code class="sig-name descname">cylinder</code><span class="sig-paren">(</span><em class="sig-param">shape, geometry, r, h, offset=[0.0, 0.0, 0.0]</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/flextomo/phantom.html#cylinder"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#flextomo.phantom.cylinder" title="Permalink to this definition">¶</a></dt>
 <dd><p>Make a cylinder with a specified radius and height.</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="flextomo.phantom.random_spheroids">
-<code class="descclassname">flextomo.phantom.</code><code class="descname">random_spheroids</code><span class="sig-paren">(</span><em>shape</em>, <em>geometry</em>, <em>number=3</em>, <em>overlap='xor'</em>, <em>rotation=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/flextomo/phantom.html#random_spheroids"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#flextomo.phantom.random_spheroids" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">flextomo.phantom.</code><code class="sig-name descname">random_spheroids</code><span class="sig-paren">(</span><em class="sig-param">shape</em>, <em class="sig-param">geometry</em>, <em class="sig-param">number=3</em>, <em class="sig-param">overlap='xor'</em>, <em class="sig-param">rotation=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/flextomo/phantom.html#random_spheroids"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#flextomo.phantom.random_spheroids" title="Permalink to this definition">¶</a></dt>
 <dd><p>Make a bunch of spheroids…</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="flextomo.phantom.sphere">
-<code class="descclassname">flextomo.phantom.</code><code class="descname">sphere</code><span class="sig-paren">(</span><em>shape, geometry, r, offset=[0.0, 0.0, 0.0]</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/flextomo/phantom.html#sphere"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#flextomo.phantom.sphere" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">flextomo.phantom.</code><code class="sig-name descname">sphere</code><span class="sig-paren">(</span><em class="sig-param">shape, geometry, r, offset=[0.0, 0.0, 0.0]</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/flextomo/phantom.html#sphere"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#flextomo.phantom.sphere" title="Permalink to this definition">¶</a></dt>
 <dd><p>Make sphere. Radius is in units (geometry.parameters[‘unit’])</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="flextomo.phantom.spheroid">
-<code class="descclassname">flextomo.phantom.</code><code class="descname">spheroid</code><span class="sig-paren">(</span><em>shape, geometry, r1, r2, r3, offset=[0.0, 0.0, 0.0]</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/flextomo/phantom.html#spheroid"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#flextomo.phantom.spheroid" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">flextomo.phantom.</code><code class="sig-name descname">spheroid</code><span class="sig-paren">(</span><em class="sig-param">shape, geometry, r1, r2, r3, offset=[0.0, 0.0, 0.0]</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/flextomo/phantom.html#spheroid"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#flextomo.phantom.spheroid" title="Permalink to this definition">¶</a></dt>
 <dd><p>Make a spheroid.</p>
 </dd></dl>
 
@@ -412,135 +409,135 @@ to compute dimensions correctly.</p>
 NIST data is used (embedded in xraylib module) to simulate x-ray spectra of compounds</p>
 <dl class="function">
 <dt id="flextomo.model.apply_noise">
-<code class="descclassname">flextomo.model.</code><code class="descname">apply_noise</code><span class="sig-paren">(</span><em>image</em>, <em>mode='poisson'</em>, <em>parameter=1</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/flextomo/model.html#apply_noise"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#flextomo.model.apply_noise" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">flextomo.model.</code><code class="sig-name descname">apply_noise</code><span class="sig-paren">(</span><em class="sig-param">image</em>, <em class="sig-param">mode='poisson'</em>, <em class="sig-param">parameter=1</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/flextomo/model.html#apply_noise"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#flextomo.model.apply_noise" title="Permalink to this definition">¶</a></dt>
 <dd><p>Add noise to the data.</p>
-<dl class="docutils">
-<dt>Args:</dt>
-<dd>image (numpy.array): image to apply noise to
+<dl class="simple">
+<dt>Args:</dt><dd><p>image (numpy.array): image to apply noise to
 mode (str): poisson or normal
-parameter (float): norm factor for poisson or a standard deviation</dd>
+parameter (float): norm factor for poisson or a standard deviation</p>
+</dd>
 </dl>
 </dd></dl>
 
 <dl class="function">
 <dt id="flextomo.model.bremsstrahlung">
-<code class="descclassname">flextomo.model.</code><code class="descname">bremsstrahlung</code><span class="sig-paren">(</span><em>energy</em>, <em>energy_max</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/flextomo/model.html#bremsstrahlung"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#flextomo.model.bremsstrahlung" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">flextomo.model.</code><code class="sig-name descname">bremsstrahlung</code><span class="sig-paren">(</span><em class="sig-param">energy</em>, <em class="sig-param">energy_max</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/flextomo/model.html#bremsstrahlung"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#flextomo.model.bremsstrahlung" title="Permalink to this definition">¶</a></dt>
 <dd><p>Simple bremstrahlung model (Kramer formula). Emax</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="flextomo.model.compton">
-<code class="descclassname">flextomo.model.</code><code class="descname">compton</code><span class="sig-paren">(</span><em>energy</em>, <em>compound</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/flextomo/model.html#compton"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#flextomo.model.compton" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">flextomo.model.</code><code class="sig-name descname">compton</code><span class="sig-paren">(</span><em class="sig-param">energy</em>, <em class="sig-param">compound</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/flextomo/model.html#compton"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#flextomo.model.compton" title="Permalink to this definition">¶</a></dt>
 <dd><p>Compton scaterring crossection for a given compound in cm2g. Energy is given in KeV</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="flextomo.model.ctf">
-<code class="descclassname">flextomo.model.</code><code class="descname">ctf</code><span class="sig-paren">(</span><em>shape</em>, <em>mode='gaussian'</em>, <em>parameter=(1</em>, <em>1)</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/flextomo/model.html#ctf"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#flextomo.model.ctf" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">flextomo.model.</code><code class="sig-name descname">ctf</code><span class="sig-paren">(</span><em class="sig-param">shape</em>, <em class="sig-param">mode='gaussian'</em>, <em class="sig-param">parameter=(1</em>, <em class="sig-param">1)</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/flextomo/model.html#ctf"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#flextomo.model.ctf" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get a CTF (fft2(PSF)) of one of the following types: gaussian, dual_ctf, fresnel, TIE</p>
-<dl class="docutils">
-<dt>Args:</dt>
-<dd><p class="first">shape (list): shape of a projection image
+<dl>
+<dt>Args:</dt><dd><p>shape (list): shape of a projection image
 mode (str): ‘gaussian’ (blurr), ‘dual_ctf’, fresnel, TIE (phase contrast)
 parameter (list / float): PSF/CTF parameters.</p>
-<blockquote class="last">
-<div>For gaussian: [detector_pixel, sigma]
+<blockquote>
+<div><p>For gaussian: [detector_pixel, sigma]
 For dual_ctf/tie: [detector_pixel, energy, src2obj, det2obj, alpha]
-For fresnel: [detector_pixel, energy, src2obj, det2obj]</div></blockquote>
+For fresnel: [detector_pixel, energy, src2obj, det2obj]</p>
+</div></blockquote>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="function">
 <dt id="flextomo.model.effective_spectrum">
-<code class="descclassname">flextomo.model.</code><code class="descname">effective_spectrum</code><span class="sig-paren">(</span><em>energy=None</em>, <em>kv=90</em>, <em>filtr={'density': 8</em>, <em>'material': 'Cu'</em>, <em>'thickness': 0.1}</em>, <em>detector={'density': 5</em>, <em>'material': 'Si'</em>, <em>'thickness': 1}</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/flextomo/model.html#effective_spectrum"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#flextomo.model.effective_spectrum" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">flextomo.model.</code><code class="sig-name descname">effective_spectrum</code><span class="sig-paren">(</span><em class="sig-param">energy=None</em>, <em class="sig-param">kv=90</em>, <em class="sig-param">filtr={'density': 8</em>, <em class="sig-param">'material': 'Cu'</em>, <em class="sig-param">'thickness': 0.1}</em>, <em class="sig-param">detector={'density': 5</em>, <em class="sig-param">'material': 'Si'</em>, <em class="sig-param">'thickness': 1}</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/flextomo/model.html#effective_spectrum"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#flextomo.model.effective_spectrum" title="Permalink to this definition">¶</a></dt>
 <dd><p>Generate an effective specturm of a CT scanner.</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="flextomo.model.find_nist_name">
-<code class="descclassname">flextomo.model.</code><code class="descname">find_nist_name</code><span class="sig-paren">(</span><em>compound_name</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/flextomo/model.html#find_nist_name"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#flextomo.model.find_nist_name" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">flextomo.model.</code><code class="sig-name descname">find_nist_name</code><span class="sig-paren">(</span><em class="sig-param">compound_name</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/flextomo/model.html#find_nist_name"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#flextomo.model.find_nist_name" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get physical properties of one of the compounds registered in nist database</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="flextomo.model.forward_spectral">
-<code class="descclassname">flextomo.model.</code><code class="descname">forward_spectral</code><span class="sig-paren">(</span><em>vol</em>, <em>proj</em>, <em>geometry</em>, <em>materials</em>, <em>energy</em>, <em>spectrum</em>, <em>n_phot=100000000.0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/flextomo/model.html#forward_spectral"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#flextomo.model.forward_spectral" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">flextomo.model.</code><code class="sig-name descname">forward_spectral</code><span class="sig-paren">(</span><em class="sig-param">vol</em>, <em class="sig-param">proj</em>, <em class="sig-param">geometry</em>, <em class="sig-param">materials</em>, <em class="sig-param">energy</em>, <em class="sig-param">spectrum</em>, <em class="sig-param">n_phot=100000000.0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/flextomo/model.html#forward_spectral"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#flextomo.model.forward_spectral" title="Permalink to this definition">¶</a></dt>
 <dd><p>Simulate spectral data using labeled volume.</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="flextomo.model.gaussian_spectrum">
-<code class="descclassname">flextomo.model.</code><code class="descname">gaussian_spectrum</code><span class="sig-paren">(</span><em>energy</em>, <em>energy_mean</em>, <em>energy_sigma</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/flextomo/model.html#gaussian_spectrum"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#flextomo.model.gaussian_spectrum" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">flextomo.model.</code><code class="sig-name descname">gaussian_spectrum</code><span class="sig-paren">(</span><em class="sig-param">energy</em>, <em class="sig-param">energy_mean</em>, <em class="sig-param">energy_sigma</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/flextomo/model.html#gaussian_spectrum"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#flextomo.model.gaussian_spectrum" title="Permalink to this definition">¶</a></dt>
 <dd><p>Generates gaussian-like spectrum with given mean and STD.</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="flextomo.model.linear_attenuation">
-<code class="descclassname">flextomo.model.</code><code class="descname">linear_attenuation</code><span class="sig-paren">(</span><em>energy</em>, <em>compound</em>, <em>rho</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/flextomo/model.html#linear_attenuation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#flextomo.model.linear_attenuation" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">flextomo.model.</code><code class="sig-name descname">linear_attenuation</code><span class="sig-paren">(</span><em class="sig-param">energy</em>, <em class="sig-param">compound</em>, <em class="sig-param">rho</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/flextomo/model.html#linear_attenuation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#flextomo.model.linear_attenuation" title="Permalink to this definition">¶</a></dt>
 <dd><p>Total X-ray absorption for a given compound in 1/mm. Energy is given in KeV</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="flextomo.model.mass_attenuation">
-<code class="descclassname">flextomo.model.</code><code class="descname">mass_attenuation</code><span class="sig-paren">(</span><em>energy</em>, <em>compound</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/flextomo/model.html#mass_attenuation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#flextomo.model.mass_attenuation" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">flextomo.model.</code><code class="sig-name descname">mass_attenuation</code><span class="sig-paren">(</span><em class="sig-param">energy</em>, <em class="sig-param">compound</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/flextomo/model.html#mass_attenuation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#flextomo.model.mass_attenuation" title="Permalink to this definition">¶</a></dt>
 <dd><p>Total X-ray absorption for a given compound in cm2g. Energy is given in KeV</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="flextomo.model.material_refraction">
-<code class="descclassname">flextomo.model.</code><code class="descname">material_refraction</code><span class="sig-paren">(</span><em>energy</em>, <em>compound</em>, <em>rho</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/flextomo/model.html#material_refraction"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#flextomo.model.material_refraction" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">flextomo.model.</code><code class="sig-name descname">material_refraction</code><span class="sig-paren">(</span><em class="sig-param">energy</em>, <em class="sig-param">compound</em>, <em class="sig-param">rho</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/flextomo/model.html#material_refraction"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#flextomo.model.material_refraction" title="Permalink to this definition">¶</a></dt>
 <dd><p>Calculate complex refrative index of the material taking
 into account it’s density.</p>
-<dl class="docutils">
-<dt>Args:</dt>
-<dd>compound (str): compound chemical formula
+<dl class="simple">
+<dt>Args:</dt><dd><p>compound (str): compound chemical formula
 rho (float): density in g / cm3
-energy (numpy.array): energy in KeV</dd>
-<dt>Returns:</dt>
-<dd>float: refraction index in [1/mm]</dd>
+energy (numpy.array): energy in KeV</p>
+</dd>
+<dt>Returns:</dt><dd><p>float: refraction index in [1/mm]</p>
+</dd>
 </dl>
 </dd></dl>
 
 <dl class="function">
 <dt id="flextomo.model.nist_names">
-<code class="descclassname">flextomo.model.</code><code class="descname">nist_names</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/flextomo/model.html#nist_names"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#flextomo.model.nist_names" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">flextomo.model.</code><code class="sig-name descname">nist_names</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/flextomo/model.html#nist_names"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#flextomo.model.nist_names" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get a list of registered compound names understood by nist</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="flextomo.model.parse_compound">
-<code class="descclassname">flextomo.model.</code><code class="descname">parse_compound</code><span class="sig-paren">(</span><em>compund</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/flextomo/model.html#parse_compound"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#flextomo.model.parse_compound" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">flextomo.model.</code><code class="sig-name descname">parse_compound</code><span class="sig-paren">(</span><em class="sig-param">compund</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/flextomo/model.html#parse_compound"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#flextomo.model.parse_compound" title="Permalink to this definition">¶</a></dt>
 <dd><p>Parse chemical formula</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="flextomo.model.photoelectric">
-<code class="descclassname">flextomo.model.</code><code class="descname">photoelectric</code><span class="sig-paren">(</span><em>energy</em>, <em>compound</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/flextomo/model.html#photoelectric"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#flextomo.model.photoelectric" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">flextomo.model.</code><code class="sig-name descname">photoelectric</code><span class="sig-paren">(</span><em class="sig-param">energy</em>, <em class="sig-param">compound</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/flextomo/model.html#photoelectric"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#flextomo.model.photoelectric" title="Permalink to this definition">¶</a></dt>
 <dd><p>Photoelectric effect for a given compound in cm2g. Energy is given in KeV</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="flextomo.model.rayleigh">
-<code class="descclassname">flextomo.model.</code><code class="descname">rayleigh</code><span class="sig-paren">(</span><em>energy</em>, <em>compound</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/flextomo/model.html#rayleigh"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#flextomo.model.rayleigh" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">flextomo.model.</code><code class="sig-name descname">rayleigh</code><span class="sig-paren">(</span><em class="sig-param">energy</em>, <em class="sig-param">compound</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/flextomo/model.html#rayleigh"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#flextomo.model.rayleigh" title="Permalink to this definition">¶</a></dt>
 <dd><p>Compton scaterring crossection for a given compound in cm2g. Energy is given in KeV</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="flextomo.model.scintillator_efficiency">
-<code class="descclassname">flextomo.model.</code><code class="descname">scintillator_efficiency</code><span class="sig-paren">(</span><em>energy</em>, <em>compound='BaFBr'</em>, <em>rho=5</em>, <em>thickness=1</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/flextomo/model.html#scintillator_efficiency"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#flextomo.model.scintillator_efficiency" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">flextomo.model.</code><code class="sig-name descname">scintillator_efficiency</code><span class="sig-paren">(</span><em class="sig-param">energy</em>, <em class="sig-param">compound='BaFBr'</em>, <em class="sig-param">rho=5</em>, <em class="sig-param">thickness=1</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/flextomo/model.html#scintillator_efficiency"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#flextomo.model.scintillator_efficiency" title="Permalink to this definition">¶</a></dt>
 <dd><p>Generate QDE of a detector (scintillator). Units: KeV, g/cm3, mm.</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="flextomo.model.spectralize">
-<code class="descclassname">flextomo.model.</code><code class="descname">spectralize</code><span class="sig-paren">(</span><em>proj</em>, <em>kv=90</em>, <em>n_phot=100000000.0</em>, <em>specimen={'density': 2.7</em>, <em>'material': 'Al'}</em>, <em>filtr={'density': 8</em>, <em>'material': 'Cu'</em>, <em>'thickness': 0.1}</em>, <em>detector={'density': 5</em>, <em>'material': 'Si'</em>, <em>'thickness': 1}</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/flextomo/model.html#spectralize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#flextomo.model.spectralize" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">flextomo.model.</code><code class="sig-name descname">spectralize</code><span class="sig-paren">(</span><em class="sig-param">proj</em>, <em class="sig-param">kv=90</em>, <em class="sig-param">n_phot=100000000.0</em>, <em class="sig-param">specimen={'density': 2.7</em>, <em class="sig-param">'material': 'Al'}</em>, <em class="sig-param">filtr={'density': 8</em>, <em class="sig-param">'material': 'Cu'</em>, <em class="sig-param">'thickness': 0.1}</em>, <em class="sig-param">detector={'density': 5</em>, <em class="sig-param">'material': 'Si'</em>, <em class="sig-param">'thickness': 1}</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/flextomo/model.html#spectralize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#flextomo.model.spectralize" title="Permalink to this definition">¶</a></dt>
 <dd><p>Simulate spectral data.</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="flextomo.model.total_transmission">
-<code class="descclassname">flextomo.model.</code><code class="descname">total_transmission</code><span class="sig-paren">(</span><em>energy</em>, <em>compound</em>, <em>rho</em>, <em>thickness</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/flextomo/model.html#total_transmission"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#flextomo.model.total_transmission" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">flextomo.model.</code><code class="sig-name descname">total_transmission</code><span class="sig-paren">(</span><em class="sig-param">energy</em>, <em class="sig-param">compound</em>, <em class="sig-param">rho</em>, <em class="sig-param">thickness</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/flextomo/model.html#total_transmission"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#flextomo.model.total_transmission" title="Permalink to this definition">¶</a></dt>
 <dd><p>Compute fraction of x-rays transmitted through the filter. 
 Units: KeV, g/cm3, mm.</p>
 </dd></dl>
@@ -548,6 +545,10 @@ Units: KeV, g/cm3, mm.</p>
 </div>
 <div class="section" id="module-flextomo">
 <span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-flextomo" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="backend">
+<h2>Backend<a class="headerlink" href="#backend" title="Permalink to this headline">¶</a></h2>
+<p>The backend of the projector module (and by extension all of flexTOMO and flexCALC) is provided by the GPU-accelerated ASTRA Toolbox. It is encapsulated in four functions: <a class="reference internal" href="#flextomo.projector.forwardproject" title="flextomo.projector.forwardproject"><code class="xref py py-meth docutils literal notranslate"><span class="pre">flextomo.projector.forwardproject()</span></code></a>, <a class="reference internal" href="#flextomo.projector.backproject" title="flextomo.projector.backproject"><code class="xref py py-meth docutils literal notranslate"><span class="pre">flextomo.projector.backproject()</span></code></a>, <code class="xref py py-meth docutils literal notranslate"><span class="pre">flexdata.geometry.astra_volume_geom()</span></code>, and <code class="xref py py-meth docutils literal notranslate"><span class="pre">flexdata.geometry.astra_projection_geom()</span></code>.</p>
 </div>
 </div>
 

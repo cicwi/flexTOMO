@@ -38,3 +38,8 @@ Module contents
     :members:
     :undoc-members:
     :show-inheritance:
+
+Backend
+-------
+
+The backend of the projector module (and by extension all of flexTOMO and flexCALC) is provided by the GPU-accelerated ASTRA Toolbox. It is encapsulated in four functions: :py:meth:`flextomo.projector.forwardproject`, :py:meth:`flextomo.projector.backproject`, :py:meth:`flexdata.geometry.astra_volume_geom`, and :py:meth:`flexdata.geometry.astra_projection_geom`.
