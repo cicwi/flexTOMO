@@ -9,7 +9,6 @@ NIST data is used (embedded in xraylib module) to simulate x-ray spectra of comp
 # >>>>>>>>>>>>>>>>>>>>>>>>>>>> Imports >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
 import numpy
-import xraylib
 import warnings
 
 from flextomo import projector
@@ -263,6 +262,7 @@ def material_refraction(energy, compound, rho):
     Returns:
         float: refraction index in [1/mm]
     """
+    import xraylib
     cmp = xraylib.CompoundParser(compound)
 
     # Compute ration of Z and A:
@@ -292,6 +292,8 @@ def mass_attenuation(energy, compound):
     '''
     Total X-ray absorption for a given compound in cm2g. Energy is given in KeV
     '''   
+    import xraylib
+
     # xraylib might complain about types:
     energy = numpy.double(energy)
 
@@ -316,10 +318,10 @@ def compton(energy, compound):
     '''
     Compton scaterring crossection for a given compound in cm2g. Energy is given in KeV
     '''
-    
+    import xraylib
+
     # xraylib might complain about types:
     energy = numpy.double(energy)
-    import xraylib
     
     if numpy.size(energy) == 1:
         return xraylib.CS_Compt_CP(compound, energy)
