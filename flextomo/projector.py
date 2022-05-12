@@ -676,27 +676,17 @@ def _backproject_block_add_(projections, volume, proj_geom, vol_geom, filtered =
             
         if isinstance(volume, numpy.memmap):
             volume[:] = vol_temp
-                         
-    except:
-        # The idea here is that we try to delete data3d objects even if ASTRA crashed
-        try:
-            if sign < 0:
-                projections *= -1
         
-            astra.algorithm.delete(projector_id)
-            astra.data3d.delete(sin_id)
+        if sign < 0:
+            projections *= -1
+                         
+    finally:  # Always try to free the created Astra objects
+        try:
             astra.data3d.delete(vol_id)
-            
-        finally:
-            info = sys.exc_info()
-            traceback.print_exception(*info)        
-    
-    if sign < 0:
-        projections *= -1
-    
-    astra.algorithm.delete(projector_id)
-    astra.data3d.delete(sin_id)
-    astra.data3d.delete(vol_id)  
+            astra.data3d.delete(sin_id)
+            astra.algorithm.delete(projector_id)
+        except NameError:  # Astra objects were not created
+            pass
         
 def _backproject_block_mult_( projections, volume, proj_geom, vol_geom):
     """
@@ -712,25 +702,17 @@ def _backproject_block_mult_( projections, volume, proj_geom, vol_geom):
         projector_id = astra.create_projector('cuda3d', proj_geom, vol_geom)
         
         # We are using accumulate version to avoid creating additional copies of data.
-        asex.accumulate_BP(projector_id, vol_id, sin_id)                
-                         
-    except:
-        # The idea here is that we try to delete data3d objects even if ASTRA crashed
-        try:
-           
-            astra.algorithm.delete(projector_id)
-            astra.data3d.delete(sin_id)
-            astra.data3d.delete(vol_id)
-            
-        finally:
-            info = sys.exc_info()
-            traceback.print_exception(*info)        
+        asex.accumulate_BP(projector_id, vol_id, sin_id)    
 
-    volume *= volume_
-    
-    astra.algorithm.delete(projector_id)
-    astra.data3d.delete(sin_id)
-    astra.data3d.delete(vol_id)      
+        volume *= volume_            
+                         
+    finally:  # Always try to free the created Astra objects
+        try:
+            astra.data3d.delete(vol_id)
+            astra.data3d.delete(sin_id)
+            astra.algorithm.delete(projector_id)
+        except NameError:  # Astra objects were not created
+            pass   
             
 def _forwardproject_block_add_( projections, volume, proj_geom, vol_geom, sign =1 ):
     """
@@ -761,19 +743,13 @@ def _forwardproject_block_add_( projections, volume, proj_geom, vol_geom, sign =
         if sign < 0:
             projections *= -1
              
-    except:
-        # Always try to delete data3d:
+    finally:  # Always try to free the created Astra objects
         try:
-            astra.algorithm.delete(projector_id)
+            astra.data3d.delete(vol_id)
             astra.data3d.delete(sin_id)
-            astra.data3d.delete(vol_id)   
-        finally:
-            info = sys.exc_info()
-            traceback.print_exception(*info)
-        
-    astra.algorithm.delete(projector_id)
-    astra.data3d.delete(sin_id)
-    astra.data3d.delete(vol_id)   
+            astra.algorithm.delete(projector_id)
+        except NameError:  # Astra objects were not created
+            pass
     
 def _contiguous_check_(data, copy = True):
     '''
