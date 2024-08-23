@@ -1,7 +1,7 @@
 Modules
 ================
 
-flexTOMO includes three modules: projector, phantom and model. 
+flexTOMO includes three modules: projector, phantom and model.
 
 The projector module provides access to forward- / back-projection operators and whole reconstruction algorithms. It supports out-of-memory input arrays (numpy.memmap) and can be accelerated through the use of subsets.
 

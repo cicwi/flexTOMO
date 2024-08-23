@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Test forward / backward projection of a 2D phantom. Various algorithms: EM, SIRT, FISTA. 
+Test forward / backward projection of a 2D phantom. Various algorithms: EM, SIRT, FISTA.
 Effect of subset version of SIRT.
 """
 #%% Imports
@@ -15,8 +15,8 @@ from flextomo import phantom
 import numpy
 
 #%% Create volume and forward project (32 projections):
-    
-# Initialize images:    
+
+# Initialize images:
 proj = numpy.zeros([30, 64, 256], dtype = 'float32')
 
 # Define a simple projection geometry:

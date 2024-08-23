@@ -19,11 +19,11 @@ conda install -c cicwi -c astra-toolbox/label/dev -c conda-forge -c owlas flexto
 ### Installing from source
 
 To install flexTOMO you will need the latest version of the ASTRA toobox (preferably development version).
-We also recommend to install [Xraylib](https://anaconda.org/conda-forge/xraylib) module using Anaconda from the Conda-Forge channel: 
+We also recommend to install [Xraylib](https://anaconda.org/conda-forge/xraylib) module using Anaconda from the Conda-Forge channel:
 
 ```
 conda install -c astra-toolbox/label/dev astra-toolbox
-conda install -c conda-forge xraylib 
+conda install -c conda-forge xraylib
 ```
 
 To install flexTOMO, simply clone this GitHub project. Go to the cloned directory and run PIP installer:
@@ -51,7 +51,7 @@ import numpy
 from flextomo import project
 from flextomo import phantom
 
-# Initialize projection images:    
+# Initialize projection images:
 proj = numpy.zeros([512, 361, 512], dtype = 'float32')
 
 # Define a simple projection geometry:

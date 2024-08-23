@@ -14,7 +14,7 @@ with open('CHANGELOG.md') as history_file:
 requirements = [
     "numpy",
     "astra-toolbox",
-    "tqdm",  
+    "tqdm",
     "scipy",
     "flexdata"]
 
@@ -40,7 +40,7 @@ dev_requirements = [
     'bumpversion',
     'watchdog',
     'coverage',
-    
+
     ]
 
 setup(
