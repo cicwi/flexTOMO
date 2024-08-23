@@ -638,7 +638,10 @@ def _bp_norm_(projections, volume, geometry):
     det_sam = geometry.det_sample[1]
 
     pix = (vv[1] * vv[1] * vv[2] * vv[2]) / det_sam
-    return 1 / (projections.shape[1] * pix * max(volume.shape))
+    norm = 1 / (projections.shape[1] * pix * max(volume.shape))
+
+    pixel_area = numpy.prod(geometry.pixel)
+    return norm * pixel_area / geometry.magnification**2
 
 def _backproject_block_add_(projections, volume, proj_geom, vol_geom, filtered = False, sign = 1):
     """

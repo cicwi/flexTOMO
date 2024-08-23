@@ -13,7 +13,7 @@ with open('CHANGELOG.md') as history_file:
 
 requirements = [
     "numpy",
-    "astra-toolbox",
+    "astra-toolbox>1.9.0",
     "tqdm",
     "scipy",
     "flexdata"]
