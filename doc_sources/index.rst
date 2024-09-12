@@ -10,7 +10,7 @@ Contents:
    :maxdepth: 2
 
 
-   readme
+   README.md
    flextomo
 
 

@@ -10,9 +10,8 @@ Contents:
    :maxdepth: 2
 
 
-   readme
+   README.md
    flextomo
-   changelog
 
 
 Indices and tables

@@ -21,7 +21,7 @@ setup(
         'dev': [
             'sphinx',
             'sphinx_rtd_theme',
-            'recommonmark',
+            'myst-parser',
         ]
     },
     url='https://github.com/cicwi/flextomo',
