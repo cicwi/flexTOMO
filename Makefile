@@ -29,7 +29,7 @@ BROWSER := python -c "$$BROWSER_PYSCRIPT"
 help:
 	@python -c "$$PRINT_HELP_PYSCRIPT" < $(MAKEFILE_LIST)
 
-clean: clean-build clean-pyc clean-test ## remove all build, test, coverage and Python artifacts
+clean: clean-build clean-pyc
 
 clean-build: ## remove build artifacts
 	rm -fr build/
@@ -44,48 +44,22 @@ clean-pyc: ## remove Python file artifacts
 	find . -name '*~' -exec rm -f {} +
 	find . -name '__pycache__' -exec rm -fr {} +
 
-clean-test: ## remove test and coverage artifacts
-	rm -fr .tox/
-	rm -f .coverage
-	rm -fr htmlcov/
-	rm -fr .pytest_cache
-
-lint: ## check style with flake8
-	flake8 flextomo tests
-
-test: ## run tests quickly with the default Python
-	python setup.py test
-
-test-all: ## run tests on every Python version with tox
-	tox
-
-coverage: ## check code coverage quickly with the default Python
-	coverage run --source flextomo setup.py test
-	coverage report -m
-	coverage html
-	$(BROWSER) htmlcov/index.html
-
 docs/.nojekyll:
 	touch docs/.nojekyll
 
 docs: docs/.nojekyll install_dev ## generate Sphinx HTML documentation, including API docs
-	#rm -f doc_sources/flextomo.rst
-	#rm -f doc_sources/modules.rst
-	#sphinx-apidoc -o doc_sources/ flextomo
-	make -C doc_sources clean
-	make -C doc_sources html
+	make --directory doc_sources clean
+	make --directory doc_sources html
 	$(BROWSER) docs/index.html
 
-servedocs: docs ## compile the docs watching for changes
-	watchmedo shell-command -p '*.rst' -c '$(MAKE) -C doc_sources html' -R -D .
-
 install: clean ## install the package to the active Python's site-packages
-	python setup.py install
+	pip install .
 
-install_dev:
-	# https://stackoverflow.com/a/28842733
+install_dev: ## install in editable mode
 	pip install -e .[dev]
 
-conda_package:
-	conda install conda-build -y
-	conda build conda/
+conda_package:  ## build Conda package
+	conda build conda/ -c cicwi -c astra-toolbox -c nvidia
+
+pypi_wheels: ## build wheel package for PyPI
+	python -m build --wheel

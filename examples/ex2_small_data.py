@@ -4,9 +4,9 @@
 Load a standard CT scan that fits in RAM. Reconstruct using different methods.
 Change the path variable to your own data path.
 Dataset originally used in this example can be downloaded from Zenodo:
-    
+
 https://doi.org/10.5281/zenodo.1144086
-    
+
 """
 #%% Imports
 
@@ -17,18 +17,18 @@ from flextomo import projector
 import numpy
 
 #%% Read data:
-    
+
 path = '/ufs/ciacc/flexbox/good/'
 
 binn = 1
 dark = data.read_stack(path, 'di00', sample = binn)
-flat = data.read_stack(path, 'io00', sample = binn)    
+flat = data.read_stack(path, 'io00', sample = binn)
 proj = data.read_stack(path, 'scan_', sample = binn, skip = binn)
 
-geom = data.read_flexraylog(path, sample = binn)   
- 
+geom = data.read_flexraylog(path, sample = binn)
+
 #%% Prepro:
-    
+
 flat = (flat - dark).mean(1)
 proj = (proj - dark) / flat[:, None, :]
 proj = -numpy.log(proj).astype('float32')

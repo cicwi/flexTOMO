@@ -9,7 +9,6 @@ NIST data is used (embedded in xraylib module) to simulate x-ray spectra of comp
 # >>>>>>>>>>>>>>>>>>>>>>>>>>>> Imports >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
 import numpy
-import xraylib
 import warnings
 
 from flextomo import projector
@@ -28,102 +27,102 @@ const_unit = {'c': 'm/c', 'h': 'J*S', 'h_ev': 'e*Vs', 'h_bar': 'J*s', 'h_bar_ev'
 def ctf(shape, mode = 'gaussian', parameter = (1, 1)):
     """
     Get a CTF (fft2(PSF)) of one of the following types: gaussian, dual_ctf, fresnel, TIE
-    
+
     Args:
         shape (list): shape of a projection image
         mode (str): 'gaussian' (blurr), 'dual_ctf', fresnel, TIE (phase contrast)
-        parameter (list / float): PSF/CTF parameters. 
+        parameter (list / float): PSF/CTF parameters.
                   For gaussian: [detector_pixel, sigma]
                   For dual_ctf/tie: [detector_pixel, energy, src2obj, det2obj, alpha]
                   For fresnel: [detector_pixel, energy, src2obj, det2obj]
     """
-    # Some constants...    
+    # Some constants...
     h_bar_ev = 6.58211899e-16
     c= 299792458
 
     if mode == 'gaussian':
-        
+
         # Gaussian CTF:
         pixel = parameter[0]
         sigma = parameter[1]
-          
+
         u = _w_space_(shape, 0, pixel)
         v = _w_space_(shape, 1, pixel)
-        
+
         ctf = numpy.exp(-((u[:, None] * sigma) ** 2 + (v[None, :] * sigma) ** 2)/2)
-        
+
     elif mode == 'dual_ctf':
-        
+
         # Dual CTF approximation phase contrast propagator:
         pixelsize = parameter[0]
         energy = parameter[1]
         r1 = parameter[2]
         r2 = parameter[3]
         alpha = parameter[4]
-        
+
         # Effective propagation distance:
         m = (r1 + r2) / r1
         r_eff = r2 / m
-        
+
         # Wavenumber;
         k = energy / (h_bar_ev * c)
-        
+
         # Frequency square:
         w2 = _w2_space_(shape, pixelsize)
-        
+
         #return -2 * numpy.cos(w2 * r_eff / (2*k)) + 2 * (alpha) * numpy.sin(w2 * r_eff / (2*k))
         ctf = numpy.cos(w2 * r_eff / (2*k)) - (alpha) * numpy.sin(w2 * r_eff / (2*k))
-    
+
     elif mode == 'fresnel':
-        
+
         # Fresnel propagator for phase contrast simulation:
         pixelsize = parameter[0]
         energy = parameter[1]
         r1 = parameter[2]
         r2 = parameter[3]
-        
+
         # Effective propagation distance:
         m = (r1 + r2) / r1
         r_eff = r2 / m
-        
+
         # Wavenumber;
         k = energy / (h_bar_ev * c)
-        
+
         # Frequency square:
         w2 = _w2_space_(shape, pixelsize)
-        
+
         ctf = numpy.exp(1j * w2 * r_eff / (2*k))
-        
+
     elif mode == 'tie':
-        
+
         # Transport of intensity equation approximation of phase contrast:
         pixelsize = parameter[0]
         energy = parameter[1]
         r1 = parameter[2]
         r2 = parameter[3]
         alpha = parameter[4]
-        
+
         # Effective propagation distance:
         m = (r1 + r2) / r1
         r_eff = r2 / m
-        
+
         # Wavenumber;
         k = energy / (h_bar_ev * c)
-        
+
         # Frequency square:
         w2 = _w2_space_(shape, pixelsize)
-        
+
         ctf = 1 - alpha * w2 * r_eff / (2*k)
-       
+
     return numpy.fft.fftshift(ctf)
-    
+
 def _w_space_(shape, dim, pixelsize):
     """
     Generate spatial frequencies along dimension dim.
-    """                   
+    """
     # Image dimentions:
     sz = numpy.array(shape) * pixelsize
-        
+
     # Frequency:
     xx = numpy.arange(0, shape[dim]) - shape[dim]//2
     return 2 * numpy.pi * xx / sz[dim]
@@ -136,133 +135,134 @@ def _w2_space_(shape, pixelsize):
     u = _w_space_(shape, 0, pixelsize)
     v = _w_space_(shape, 1, pixelsize)
     return (u**2)[:, None] + (v**2)[None, :]
-            
+
 def apply_noise(image, mode = 'poisson', parameter = 1):
     """
     Add noise to the data.
-    
+
     Args:
         image (numpy.array): image to apply noise to
         mode (str): poisson or normal
-        parameter (float): norm factor for poisson or a standard deviation    
+        parameter (float): norm factor for poisson or a standard deviation
     """
-    
+
     if mode == 'poisson':
         return numpy.random.poisson(image * parameter)
-        
+
     elif mode == 'normal':
         return numpy.random.normal(image, parameter)
-        
-    else: 
+
+    else:
         raise ValueError('Me not recognize the mode! Use normal or poisson!')
 
 def effective_spectrum(energy = None, kv = 90, filtr = {'material':'Cu', 'density':8, 'thickness':0.1}, detector = {'material':'Si', 'density':5, 'thickness':1}):
     """
     Generate an effective specturm of a CT scanner.
-    """            
-    
+    """
+
     # Energy range:
     if not energy:
         energy = numpy.linspace(10, 90, 9)
-        
+
     # Tube:
-    spectrum = bremsstrahlung(energy, kv) 
-    
+    spectrum = bremsstrahlung(energy, kv)
+
     # Filter:
     if filtr:
         spectrum *= total_transmission(energy, filtr['material'], rho = filtr['density'], thickness = filtr['thickness'])
-    
+
     # Detector:
-    if detector:    
+    if detector:
         spectrum *= scintillator_efficiency(energy, detector['material'], rho = detector['density'], thickness = detector['thickness'])
-    
+
     # Normalize:
     spectrum /= (energy*spectrum).sum()
-    
+
     return energy, spectrum
-    
+
 def spectralize(proj, kv = 90, n_phot = 1e8, specimen = {'material':'Al', 'density': 2.7}, filtr = {'material':'Cu', 'density':8, 'thickness':0.1}, detector = {'material':'Si', 'density':5, 'thickness':1}):
     """
     Simulate spectral data.
     """
-    
+
     # Generate spectrum:
     energy, spectrum = effective_spectrum(kv, filtr, detector)
-    
+
     # Get the material refraction index:
     mu = linear_attenuation(energy, specimen['material'], specimen['density'])
-     
+
     # Display:
-    display.plot(energy, spectrum, title = 'Spectrum') 
-    display.plot(energy, mu, title = 'Linear attenuation') 
-        
+    display.plot(energy, spectrum, title = 'Spectrum')
+    display.plot(energy, mu, title = 'Linear attenuation')
+
     # Simulate intensity images:
     counts = numpy.zeros_like(proj)
-        
+
     for ii in range(len(energy)):
-        
+
         # Monochromatic component:
         monochrome = spectrum[ii] * numpy.exp(-proj * mu[ii])
-        monochrome = apply_noise(monochrome, 'poisson', n_phot) / n_phot    
-        
+        monochrome = apply_noise(monochrome, 'poisson', n_phot) / n_phot
+
         # Detector response is assumed to be proportional to E
         counts += energy[ii] * monochrome
-    
+
     return counts
 
 def forward_spectral(vol, proj, geometry, materials, energy, spectrum, n_phot = 1e8):
     """
     Simulate spectral data using labeled volume.
     """
-    
+
     max_label = int(vol.max())
-    
+
     if max_label != len(materials): raise ValueError('Number of materials is not the same as the number of labels in the volume!')
 
     # Normalize spectrum:
     spectrum /= (spectrum * energy).sum()
-    
+
     # Simulate intensity images:
     lab_proj = []
     for jj in range(max_label):
-        
-        # Forward project:    
+
+        # Forward project:
         proj_j = numpy.zeros_like(proj)
         vol_j = numpy.float32(vol == (jj+1))
         projector.forwardproject(proj_j, vol_j, geometry)
-        
+
         lab_proj.append(proj_j)
-        
+
     for ii in range(len(energy)):
-        
+
         # Monochromatic components:
         monochrome = numpy.ones_like(proj)
-        
+
         for jj in range(max_label):
-            
+
             mu = linear_attenuation(energy, materials[jj]['material'], materials[jj]['density'])
-    
+
             monochrome *= numpy.exp(-lab_proj[jj] * mu[ii])
-            
+
         monochrome *= spectrum[ii]
-        monochrome = apply_noise(monochrome, 'poisson', n_phot) / n_phot    
+        monochrome = apply_noise(monochrome, 'poisson', n_phot) / n_phot
 
         # Detector response is assumed to be proportional to E
         proj += energy[ii] * monochrome
-        
+
 def material_refraction(energy, compound, rho):
-    """    
+    """
     Calculate complex refrative index of the material taking
-    into account it's density. 
+    into account it's density.
 
     Args:
         compound (str): compound chemical formula
         rho (float): density in g / cm3
-        energy (numpy.array): energy in KeV   
+        energy (numpy.array): energy in KeV
 
     Returns:
         float: refraction index in [1/mm]
     """
+    import xraylib
     cmp = xraylib.CompoundParser(compound)
 
     # Compute ration of Z and A:
@@ -291,7 +291,9 @@ def material_refraction(energy, compound, rho):
 def mass_attenuation(energy, compound):
     '''
     Total X-ray absorption for a given compound in cm2g. Energy is given in KeV
-    '''   
+    '''
+    import xraylib
+
     # xraylib might complain about types:
     energy = numpy.double(energy)
 
@@ -316,11 +318,11 @@ def compton(energy, compound):
     '''
     Compton scaterring crossection for a given compound in cm2g. Energy is given in KeV
     '''
-    
+    import xraylib
+
     # xraylib might complain about types:
     energy = numpy.double(energy)
-    import xraylib
-    
+
     if numpy.size(energy) == 1:
         return xraylib.CS_Compt_CP(compound, energy)
     else:
@@ -332,7 +334,7 @@ def rayleigh(energy, compound):
     Compton scaterring crossection for a given compound in cm2g. Energy is given in KeV
     '''
     import xraylib
-    
+
     # xraylib might complain about types:
     energy = numpy.double(energy)
 
@@ -347,7 +349,7 @@ def photoelectric(energy, compound):
     Photoelectric effect for a given compound in cm2g. Energy is given in KeV
     '''
     import xraylib
-    
+
     # xraylib might complain about types:
     energy = numpy.double(energy)
 
@@ -371,7 +373,7 @@ def scintillator_efficiency(energy, compound='BaFBr', rho=5, thickness=1):
 
 def total_transmission(energy, compound, rho, thickness):
     '''
-    Compute fraction of x-rays transmitted through the filter. 
+    Compute fraction of x-rays transmitted through the filter.
     Units: KeV, g/cm3, mm.
     '''
     # Attenuation by the photoelectric effect:
@@ -383,11 +385,11 @@ def bremsstrahlung(energy, energy_max):
     Simple bremstrahlung model (Kramer formula). Emax
     '''
     if energy_max < 10:
-        
+
         warnings.warn('Maximum energy in the Kramer formula is too low. Setting to 100kV')
         energy_max = 100
-        
-    # Kramer:    
+
+    # Kramer:
     spectrum = energy * (energy_max - energy)
     spectrum[spectrum < 0] = 0
 
@@ -405,7 +407,7 @@ def nist_names():
     Get a list of registered compound names understood by nist
     '''
     import xraylib
-    
+
     return xraylib.GetCompoundDataNISTList()
 
 def find_nist_name(compound_name):
@@ -413,7 +415,7 @@ def find_nist_name(compound_name):
     Get physical properties of one of the compounds registered in nist database
     '''
     import xraylib
-    
+
     return xraylib.GetCompoundDataNISTByName(compound_name)
 
 def parse_compound(compund):
@@ -421,5 +423,5 @@ def parse_compound(compund):
     Parse chemical formula
     '''
     import xraylib
-    
+
     return xraylib.CompoundParser(compund)
