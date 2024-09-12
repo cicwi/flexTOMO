@@ -117,9 +117,10 @@ def SIRT( projections, volume, geometry, iterations):
 
     # Stop progress bar
     _pbar_close_(pbar)
-
-    if rnorms:
-         display.plot2d(rnorms, semilogy = True, title = 'Resudual L2')
+                     
+    if rnorms:   
+         display.plot2d(rnorms, semilogy = True, title = 'Resudual L2')   
+         return rnorms
 
 def PWLS(projections, volume, geometry, iterations):
     """
@@ -892,5 +893,5 @@ def _subset_generator_(projections, volume, geometry, copy = False):
             # Initialize ASTRA geometries:
             proj_geom = geometry[jj].astra_projection_geom(projections[jj].shape, index = sl)
             vol_geom = geometry[jj].astra_volume_geom(volume.shape)
-
+     
             yield subset, proj_geom, vol_geom
