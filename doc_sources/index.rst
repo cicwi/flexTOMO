@@ -12,7 +12,6 @@ Contents:
 
    readme
    flextomo
-   changelog
 
 
 Indices and tables
