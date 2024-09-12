@@ -15,6 +15,7 @@ setup(
     ],
     license="GNU General Public License v3",
     long_description=readme,
+    long_description_content_type="text/markdown",
     name='flextomo',
     packages=find_packages(include=['flextomo']),
     extras_require={
