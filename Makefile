@@ -48,21 +48,18 @@ docs/.nojekyll:
 	touch docs/.nojekyll
 
 docs: docs/.nojekyll install_dev ## generate Sphinx HTML documentation, including API docs
-	#rm -f doc_sources/flextomo.rst
-	#rm -f doc_sources/modules.rst
-	#sphinx-apidoc -o doc_sources/ flextomo
-	make -C doc_sources clean
-	make -C doc_sources html
+	make --directory doc_sources clean
+	make --directory doc_sources html
 	$(BROWSER) docs/index.html
 
 install: clean ## install the package to the active Python's site-packages
 	pip install .
 
-install_dev:
+install_dev: ## install in editable mode
 	pip install -e .[dev]
 
-conda_package:
+conda_package:  ## build Conda package
 	conda build conda/ -c cicwi -c astra-toolbox -c nvidia
 
-pypi_wheels:
+pypi_wheels: ## build wheel package for PyPI
 	python -m build --wheel
