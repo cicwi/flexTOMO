@@ -63,3 +63,6 @@ install_dev:
 
 conda_package:
 	conda build conda/ -c cicwi -c astra-toolbox -c nvidia
+
+pypi_wheels:
+	python -m build --wheel
