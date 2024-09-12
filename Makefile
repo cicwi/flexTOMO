@@ -87,5 +87,4 @@ install_dev:
 	pip install -e .[dev]
 
 conda_package:
-	conda install conda-build -y
-	conda build conda/
+	conda build conda/ -c cicwi -c astra-toolbox -c nvidia

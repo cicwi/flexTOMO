@@ -10,15 +10,19 @@ source:
     path: ../
 
 build:
+    noarch: python
     number: '0'
+    script: {{ PYTHON }} -m pip install . --no-deps --ignore-installed --no-build-isolation --verbose
 
 requirements:
     build:
-        - python
+        - python >=3.7
+        - pip
         - setuptools
+        - wheel
 
     run:
-        - python
+        - python >=3.7
 
         # dependencies are defined in setup.py
         {% for dep in data['install_requires'] %}
@@ -29,7 +33,3 @@ about:
     home: https://github.com/cicwi/flexTOMO
     license_file: LICENSE.md
     summary: "ASTRA-based cone beam tomography reconstructions."
-
-extra:
-    maintainers:
-        - Alex Kostenko
