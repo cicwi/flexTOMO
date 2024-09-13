@@ -382,7 +382,7 @@ def total_transmission(energy, compound, rho, thickness):
 
 def bremsstrahlung(energy, energy_max):
     '''
-    Simple bremstrahlung model (Kramer formula). Emax
+    Simple Bremsstrahlung model (Kramer formula).
     '''
     if energy_max < 10:
 
@@ -390,7 +390,7 @@ def bremsstrahlung(energy, energy_max):
         energy_max = 100
 
     # Kramer:
-    spectrum = energy * (energy_max - energy)
+    spectrum = energy_max / energy - 1
     spectrum[spectrum < 0] = 0
 
     # Normalize:
