@@ -20,7 +20,7 @@ from flexdata import display
 phys_const = {'c': 299792458, 'h': 6.62606896e-34, 'h_ev': 4.13566733e-15, 'h_bar': 1.054571628e-34, 'h_bar_ev': 6.58211899e-16,
               'e': 1.602176565e-19, 'Na': 6.02214179e23, 're': 2.817940289458e-15, 'me': 9.10938215e-31, 'me_ev': 0.510998910e6}
 const_unit = {'c': 'm/c', 'h': 'J*S', 'h_ev': 'e*Vs', 'h_bar': 'J*s', 'h_bar_ev': 'eV*s',
-              'e': 'colomb', 'Na': '1/mol', 're': 'm', 'me': 'kg', 'me_ev': 'ev/c**2'}
+              'e': 'coulomb', 'Na': '1/mol', 're': 'm', 'me': 'kg', 'me_ev': 'ev/c**2'}
 
 # >>>>>>>>>>>>>>>>>>>>>>>>>>>> Methods >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
@@ -30,7 +30,7 @@ def ctf(shape, mode = 'gaussian', parameter = (1, 1)):
 
     Args:
         shape (list): shape of a projection image
-        mode (str): 'gaussian' (blurr), 'dual_ctf', fresnel, TIE (phase contrast)
+        mode (str): 'gaussian' (blur), 'dual_ctf', fresnel, TIE (phase contrast)
         parameter (list / float): PSF/CTF parameters.
                   For gaussian: [detector_pixel, sigma]
                   For dual_ctf/tie: [detector_pixel, energy, src2obj, det2obj, alpha]
@@ -120,7 +120,7 @@ def _w_space_(shape, dim, pixelsize):
     """
     Generate spatial frequencies along dimension dim.
     """
-    # Image dimentions:
+    # Image dimensions:
     sz = numpy.array(shape) * pixelsize
 
     # Frequency:
@@ -157,7 +157,7 @@ def apply_noise(image, mode = 'poisson', parameter = 1):
 
 def effective_spectrum(energy = None, kv = 90, filtr = {'material':'Cu', 'density':8, 'thickness':0.1}, detector = {'material':'Si', 'density':5, 'thickness':1}):
     """
-    Generate an effective specturm of a CT scanner.
+    Generate an effective spectrum of a CT scanner.
     """
 
     # Energy range:
@@ -251,7 +251,7 @@ def forward_spectral(vol, proj, geometry, materials, energy, spectrum, n_phot = 
 
 def material_refraction(energy, compound, rho):
     """
-    Calculate complex refrative index of the material taking
+    Calculate complex refractive index of the material taking
     into account it's density.
 
     Args:
@@ -316,7 +316,7 @@ def linear_attenuation(energy, compound, rho):
 
 def compton(energy, compound):
     '''
-    Compton scaterring crossection for a given compound in cm2g. Energy is given in KeV
+    Compton scattering cross section for a given compound in cm2g. Energy is given in KeV
     '''
     import xraylib
 
@@ -331,7 +331,7 @@ def compton(energy, compound):
 
 def rayleigh(energy, compound):
     '''
-    Compton scaterring crossection for a given compound in cm2g. Energy is given in KeV
+    Compton scattering cross section for a given compound in cm2g. Energy is given in KeV
     '''
     import xraylib
 
@@ -418,10 +418,10 @@ def find_nist_name(compound_name):
 
     return xraylib.GetCompoundDataNISTByName(compound_name)
 
-def parse_compound(compund):
+def parse_compound(compound):
     '''
     Parse chemical formula
     '''
     import xraylib
 
-    return xraylib.CompoundParser(compund)
+    return xraylib.CompoundParser(compound)

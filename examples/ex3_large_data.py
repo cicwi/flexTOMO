@@ -3,7 +3,7 @@
 """
 Load a large CT scan that doesn't fit in computer RAM. Use numpy.memmap to create a disk map.
 
-Change the path variable to your own data path. Change the scrath path to a fast drive (SSD).
+Change the path variable to your own data path. Change the scratch path to a fast drive (SSD).
 Dataset originally used in this example can be downloaded from Zenodo:
 
 https://doi.org/10.5281/zenodo.1144086

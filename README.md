@@ -1,6 +1,6 @@
 # flexTOMO
 
-This project is a part of the larger X-ray tomographic reconstruction toolbox comprised of [flexDATA](https://github.com/cicwi/flexDATA),, [flexTOMO](https://github.com/cicwi/flexTOMO) and [flexCALC](https://github.com/cicwi/flexCALC).
+This project is a part of the larger X-ray tomographic reconstruction toolbox comprised of [flexDATA](https://github.com/cicwi/flexDATA), [flexTOMO](https://github.com/cicwi/flexTOMO) and [flexCALC](https://github.com/cicwi/flexCALC).
 flexTOMO provides a wrapper around the GPU-accelerated tomographic reconstruction toolbox [ASTRA](https://github.com/astra-toolbox/astra-toolbox).
 The main purpose of this project is to provide an easy way to use cone-beam forward- and back-projectors. Another purpose is to collect various algebraic reconstruction algorithms, providing support for large disk-mapped arrays (memmaps) and subsets that allow to both accelerate convergence and to save RAM.
 

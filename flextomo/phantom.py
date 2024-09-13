@@ -5,7 +5,7 @@ Created on Fri Nov 2017
 
 @author: kostenko
 
-Genereation of CT phantoms from geometrical primitives. Reads geometry data
+Generation of CT phantoms from geometrical primitives. Reads geometry data
 to compute dimensions correctly.
 
 """

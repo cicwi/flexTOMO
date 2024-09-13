@@ -73,7 +73,7 @@ vol_rec = numpy.zeros_like(vol)
 projector.FDK(-numpy.log(proj_i), vol_rec, geom)
 display.slice(vol_rec, title = 'FDK (Raw)')
 
-#%% Invertion of phase contrast based on dual-CTF model:
+#%% Inversion of phase contrast based on dual-CTF model:
 
 # Propagator (Dual CTF):
 alpha = numpy.imag(n) / numpy.real(n)

@@ -13,7 +13,7 @@ from flextomo import phantom
 
 import numpy
 
-#%% Create volume and forward project into two orhogonal scans:
+#%% Create volume and forward project into two orthogonal scans:
 
 # Initialize images:
 proj_a = numpy.zeros([128, 32, 128], dtype = 'float32')

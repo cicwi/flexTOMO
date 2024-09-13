@@ -78,7 +78,7 @@ def FDK( projections, volume, geometry):
     Args:
         projections : input numpy.array (dtype = float32) with the following dimensions: [vrt, rot, hrz]
         volume      : output numpy.array (dtype = float32) with the following dimensions: [vrt, mag, hrz]
-        geometry    : geometry description - one of threee types: 'simple', 'static_offsets', 'linear_offsets'
+        geometry    : geometry description - one of three types: 'simple', 'static_offsets', 'linear_offsets'
     """
     backproject(projections, volume, geometry, filtered = True)
 
@@ -119,11 +119,11 @@ def SIRT( projections, volume, geometry, iterations):
     _pbar_close_(pbar)
 
     if rnorms:
-         display.plot2d(rnorms, semilogy = True, title = 'Resudual L2')
+         display.plot2d(rnorms, semilogy = True, title = 'Residual L2')
 
 def PWLS(projections, volume, geometry, iterations):
     """
-    Simple implementation of the Penalized Weighted Least Squeares.
+    Simple implementation of the Penalized Weighted Least Squares.
     Gives better results when photon starvation and metal artifacts are present in small parts of the volume.
     Needs more memory than SIRT!
     """
@@ -160,7 +160,7 @@ def PWLS(projections, volume, geometry, iterations):
     _pbar_close_(pbar)
 
     if rnorms:
-         display.plot(rnorms, semilogy = True, title = 'Resudual L2')
+         display.plot(rnorms, semilogy = True, title = 'Residual L2')
 
 def FISTA( projections, volume, geometry, iterations, lmbda = 0):
     '''
@@ -210,7 +210,7 @@ def FISTA( projections, volume, geometry, iterations, lmbda = 0):
     _pbar_close_(pbar)
 
     if rnorms:
-         display.plot(rnorms, semilogy = True, title = 'Resudual norm')
+         display.plot(rnorms, semilogy = True, title = 'Residual norm')
 
 def EM( projections, volume, geometry, iterations):
     """
@@ -256,7 +256,7 @@ def EM( projections, volume, geometry, iterations):
     _pbar_close_(pbar)
 
     if rnorms:
-         display.plot(rnorms, semilogy = True, title = 'Resudual norm')
+         display.plot(rnorms, semilogy = True, title = 'Residual norm')
 
 # >>>>>>>>>>>>>>>>>>>>>>>>>>>> Low level building blocks>>>>>>>>>>>>>>>>>>>>>>
 def forwardproject(projections, volume, geometry, sign = 1):
@@ -267,7 +267,7 @@ def forwardproject(projections, volume, geometry, sign = 1):
     Args:
         projections : output numpy.array (dtype = float32) with the following dimensions: [vrt, rot, hrz]
         volume      : input numpy.array (dtype = float32) with the following dimensions: [vrt, mag, hrz]
-        geometry    : geometry description - one of threee types: 'simple', 'static_offsets', 'linear_offsets'
+        geometry    : geometry description - one of three types: 'simple', 'static_offsets', 'linear_offsets'
         sign        : either +1 or -1 (add or subtract the data)
     """
     subsets = settings.subsets
@@ -524,7 +524,7 @@ def l1_update(vol_tv, vol_t, vol, L, lamb):
 
 def em_update(projections, volume, geometry):
     """
-    A single Expecrtation Maximization step. Supports blocking and subsets.
+    A single Expectation-Maximization step. Supports blocking and subsets.
     """
     # Global settings:
     ss = settings
@@ -609,7 +609,7 @@ def _pbar_close_(pbar):
 
 def _forwardprojector_norm_(vol_shape, geometry):
     """
-    Norm of the forward projection. Obtained through reverse engeneering.
+    Norm of the forward projection. Obtained through reverse engineering.
     """
     # We assume that the longest possible ray equal to the diagonal of the volume:
     width = numpy.sqrt((numpy.array(vol_shape)**2).sum())

@@ -62,7 +62,7 @@ projector.settings.bounds = [0, 2]
 projector.settings.subsets = 10
 projector.settings.sorting = 'equidistant'
 
-# Reonstruction:
+# Reconstruction:
 vol_rec = numpy.zeros_like(vol)
 projector.SIRT(proj, vol_rec, geom, iterations = 20)
 display.slice(vol_rec, title = 'SIRT')

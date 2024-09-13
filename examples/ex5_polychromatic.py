@@ -17,7 +17,7 @@ import numpy
 
 #%% Short version of the spectral modeling:
 
-# Geomtery:
+# Geometry:
 geom = geometry.circular(src2obj = 100, det2obj = 100, det_pixel = 0.2, ang_range = [0, 360])
 
 # This is our phantom:
@@ -36,7 +36,7 @@ display.plot(E,S, title ='Effective spectrum')
 # Materials list that corresponds to the number of labels in our phantom:
 mats = [{'material':'Al', 'density':2.7},]
 
-# Sinogram that will be simultated:
+# Sinogram that will be simulated:
 counts = numpy.zeros([1, 128, 128], dtype = 'float32')
 
 # Simulate:
@@ -56,4 +56,4 @@ projector.FDK(proj, vol_rec, geom)
 
 # Display:
 display.slice(vol_rec, title = 'Uncorrected FDK')
-display.plot(vol_rec[0, 64], title = 'Crossection')
+display.plot(vol_rec[0, 64], title = 'Cross section')
